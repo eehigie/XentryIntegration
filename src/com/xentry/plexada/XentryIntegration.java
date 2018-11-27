@@ -5,14 +5,18 @@
  */
 package com.xentry.plexada;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 import javax.xml.soap.SOAPBodyElement;
+import javax.xml.soap.SOAPConnection;
+import javax.xml.soap.SOAPConnectionFactory;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
@@ -24,6 +28,13 @@ import javax.xml.soap.SOAPMessage;
 public class XentryIntegration {
     
     private static final StringWriter ERRORS = new StringWriter();
+    
+    
+    public static String decompress(byte[] bytes) throws Exception {
+    
+        GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(bytes));
+        return gis.toString();
+    }
     
     public static void main(String[] args) {
         Map customerConcernMap = new HashMap();
@@ -77,6 +88,16 @@ public class XentryIntegration {
             SOAPElement customerElement = initJob.putCustomer(jobElement, emptyMap, emptyMap);
             
             soap_message.writeTo(System.out);
+            
+            SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
+            SOAPConnection connection = soapConnectionFactory.createConnection();
+            URL endpoint = new URL("https://srs-ds-int1.i.daimler.com/STARCDS/services/ExternalInterface");
+            SOAPMessage response = connection.call(soap_message, endpoint);
+            connection.close();
+            
+            ParseResponse response_msg = new ParseResponse(response);
+            response_msg.getResponseNodes();
+            
             
         } catch (SOAPException ex) {
             ex.printStackTrace(new PrintWriter(ERRORS));                                                            
