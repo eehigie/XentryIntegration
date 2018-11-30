@@ -20,12 +20,12 @@ import javax.xml.soap.SOAPConnection;
 import javax.xml.soap.SOAPConnectionFactory;
 import javax.xml.soap.SOAPConstants;
 import javax.xml.soap.SOAPElement;
-import javax.xml.soap.SOAPEnvelope;
+//import javax.xml.soap.SOAPEnvelope;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPHeader;
 import javax.xml.soap.SOAPHeaderElement;
 import javax.xml.soap.SOAPMessage;
-import javax.xml.soap.SOAPPart;
+//import javax.xml.soap.SOAPPart;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -37,10 +37,10 @@ import org.w3c.dom.NodeList;
 public class InitJob {
     private static final StringWriter ERRORS = new StringWriter();
     private static SOAPMessage soap_message = null;
-    private static SOAPElement PartElement = null;
-    private static SOAPElement WorkItemElement = null;
-    private static SOAPElement ServicePackageElement = null;
-    private static SOAPElement ServiceMeasurePackageElement = null;
+    private static SOAPElement PartElement;
+    private static SOAPElement WorkItemElement;
+    private static SOAPElement ServicePackageElement;
+    private static SOAPElement ServiceMeasurePackageElement ;
     
     public SOAPElement getPartElement(){
         return PartElement;

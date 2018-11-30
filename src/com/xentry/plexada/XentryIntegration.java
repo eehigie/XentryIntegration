@@ -66,7 +66,8 @@ public class XentryIntegration {
         defectKeyMap.put("Description","true");
         
         Map emptyMap = new HashMap();
-        
+                
+     
         try {
             InitJob initJob = new InitJob();
             SOAPMessage soap_message = initJob.getSOAPMessage();
