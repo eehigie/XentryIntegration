@@ -5,6 +5,7 @@
  */
 package com.xentry.plexada;
 
+import com.siebel.data.SiebelPropertySet;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -27,6 +28,11 @@ import javax.xml.soap.SOAPMessage;
  */
 public class XentryIntegration {
     
+    private Map PlxXentryServiceMeasureMap;
+    private Map PlxServiceMeasureNotesAndDefectKeyMap;
+    private Map PlxServiceMeasurePartsMap;
+    private Map PlxServiceMeasureWorkItem;
+    private Map PlxServiceMeasurePackageMap;
     private static final StringWriter ERRORS = new StringWriter();
     
     
@@ -34,6 +40,23 @@ public class XentryIntegration {
     
         GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(bytes));
         return gis.toString();
+    }
+    
+    public void doInvokeMethod(String methodName, SiebelPropertySet input, SiebelPropertySet output) {
+        
+        if(methodName.equalsIgnoreCase("InitJob")){
+            MyLogging.log(Level.INFO, "------In InitJob--------");
+            String init_job_xml = input.getProperty("InitJobXML");
+            MyLogging.log(Level.INFO, "init_job_xml : "+init_job_xml);
+            MyLogging.log(Level.INFO, "getting Service Measure data from init_job_xml ..... ");
+            XentryServiceMeasure xsm = new XentryServiceMeasure(init_job_xml);
+            PlxXentryServiceMeasureMap = xsm.getXentryServiceMeasure();
+            PlxServiceMeasureNotesAndDefectKeyMap = xsm.getServiceMeasureNotesAndDefectKey();
+            PlxServiceMeasurePartsMap = xsm.getPlxServiceMeasureParts();
+            PlxServiceMeasureWorkItem = xsm.getPlxServiceMeasureWorkItem();
+            PlxServiceMeasurePackageMap = xsm.getPlxServiceMeasurePackageMap();
+        }
+        
     }
     
     public static void main(String[] args) {
