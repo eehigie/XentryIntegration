@@ -13,7 +13,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -324,8 +324,7 @@ public class XentryServiceMeasure {
             }                        
         }
     }
-    
-        
+          
     private Map parseXentryServiceMeasure() throws ParserConfigurationException, SAXException, IOException{
         //String xmldoc = customer_concern_xml;
         //XmlFormatter formatter = new XmlFormatter();
@@ -533,7 +532,6 @@ public class XentryServiceMeasure {
         return PlxServiceMeasureWorkItem;
     }
     
-    
     private Map parseServiceMeasurePackage() throws ParserConfigurationException, SAXException, IOException{
         Map outputMap = new HashMap();
         Map tmpMap  = new HashMap();        
@@ -647,7 +645,6 @@ public class XentryServiceMeasure {
         }
         return PlxServiceMeasurePackageMap;
     }
-    
     
     public Map getXentryServiceMeasure(){
         return PlxXentryServiceMeasureMap;
