@@ -9,9 +9,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import javax.xml.namespace.QName;
 import javax.xml.soap.MessageFactory;
 import javax.xml.soap.SOAPBody;
@@ -78,6 +81,42 @@ public class InitJob {
             Map.Entry mEntry = (Map.Entry) iter.next();            
             QName q_name = new QName(String.valueOf(mEntry.getKey()));            
             dataElement.addAttribute(q_name, String.valueOf(mEntry.getValue()));            
+	}
+    }
+    
+    private static void AddAttributes(SOAPElement dataElement, Map elementAttributes, String subMapName,String subElement) throws SOAPException{
+        Iterator iter = elementAttributes.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry mEntry = (Map.Entry) iter.next();            
+            QName q_name = new QName(String.valueOf(mEntry.getKey()));
+            
+            dataElement.addAttribute(q_name, String.valueOf(mEntry.getValue()));    
+            
+            SOAPElement theSubElement = AddDataElement(dataElement,"http://dms.ri.as.daimler.com/DMSService/types","types",subElement,""); 
+            Map tmpMap = (Map)elementAttributes.get(subMapName);
+            if(!tmpMap.isEmpty()){
+               AddAttributes(theSubElement, tmpMap);  
+            }            
+	}
+    }
+    
+    private static void AddAttributes(SOAPElement dataElement, Map elementAttributes, String IgnoreString) throws SOAPException{
+        Iterator iter = elementAttributes.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry mEntry = (Map.Entry) iter.next();            
+            QName q_name = new QName(String.valueOf(mEntry.getKey())); 
+            if(!String.valueOf(q_name).equalsIgnoreCase(IgnoreString))
+                dataElement.addAttribute(q_name, String.valueOf(mEntry.getValue()));                                                   
+	}
+    }
+    
+    private static void AddAttributes(SOAPElement dataElement, Map elementAttributes, List lst) throws SOAPException{
+        Iterator iter = elementAttributes.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry mEntry = (Map.Entry) iter.next();            
+            QName q_name = new QName(String.valueOf(mEntry.getKey())); 
+            if(!lst.contains(String.valueOf(q_name)))
+                dataElement.addAttribute(q_name, String.valueOf(mEntry.getValue()));                                                   
 	}
     }
     
@@ -277,6 +316,88 @@ public class InitJob {
         return customerConcernElement;
     }
     
+    public SOAPElement putCustomerConcern(SOAPElement jobElement,Map xentryInitJobcustomerConcernMap) throws SOAPException{       
+       SOAPElement customerConcernElement = null;
+       SOAPElement notesElement;
+       SOAPElement defectKeyElement ;
+       SOAPElement partElement;
+       SOAPElement workItemElement ;
+       SOAPElement servicePackageElement ;
+       List listI = new ArrayList();
+       listI.add("WorkItemPrice");           
+       listI.add("PackagePrice");
+           listI.add("PackagePart");
+           listI.add("PackageWorkItem");
+       for(int j = 0; j < xentryInitJobcustomerConcernMap.size();++j){
+           MyLogging.log(Level.INFO, "COunt :"+j);
+           Map xijccMap = (Map)xentryInitJobcustomerConcernMap.get(j);
+           Map ccMap = (Map)xijccMap.get("XentryCustomerConcernMap");
+           customerConcernElement = AddDataElement(jobElement,"http://dms.ri.as.daimler.com/DMSService/dms_sending","dms","CustomerConcern","");
+           if(!ccMap.isEmpty()){
+              AddAttributes(customerConcernElement, ccMap); 
+           }
+           notesElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Notes","");
+           Map notesMap = (Map)xijccMap.get("PlxCustomerConcernNotesMap");
+           if(!notesMap.isEmpty()){
+              AddAttributes(notesElement, notesMap);  
+           }
+           defectKeyElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","DefectKey",""); 
+           Map defectKeyMap = (Map)xijccMap.get("PlxCustomerConcernDefectKeyMap");
+           if(!defectKeyMap.isEmpty()){
+               AddAttributes(defectKeyElement, defectKeyMap);  
+           }
+           
+           Map pMap = (Map)xijccMap.get("PlxCustomerConcernPartsMap");
+           for(int j2 = 0; j2 < pMap.size();++j2){
+              partElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Part",""); 
+              Map partMap = (Map)pMap.get(j2);
+              AddAttributes(partElement, partMap,"PartPrice");
+              if(!partMap.isEmpty()){                                        
+                    SOAPElement partPriceElement = AddDataElement(partElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Prices",""); 
+                    Map partPriceMap = (Map)partMap.get("PartPrice");
+                    if(!partPriceMap.isEmpty()){
+                        AddAttributes(partPriceElement, partPriceMap);  
+                    }   
+              }
+           }
+          
+           
+           Map wkItmMap = (Map)xijccMap.get("PlxCustomerConcernWorkItemMap");
+           for(int j2 = 0; j2 < wkItmMap.size();++j2){
+              workItemElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","WorkItem","");
+              Map workItemMap = (Map)wkItmMap.get(j2);              
+              
+              if(!workItemMap.isEmpty()){  
+                    AddAttributes(workItemElement, workItemMap,listI);
+                    SOAPElement workItemPriceElement = AddDataElement(workItemElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Prices",""); 
+                    Map workItemPriceMap = (Map)workItemMap.get("WorkItemPrice");
+                    if(!workItemPriceMap.isEmpty()){
+                        AddAttributes(workItemPriceElement, workItemPriceMap);  
+                    }   
+              }
+           }
+                                            
+           Map srvPkgMap = (Map)xijccMap.get("PlxCustomerConcernServicePackageMap");           
+           for(int j2 = 0; j2 < srvPkgMap.size();++j2){
+               servicePackageElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","ServicePackage","");
+               Map servicePackageMap = (Map)srvPkgMap.get(j2);
+               if(!servicePackageMap.isEmpty()){
+                  AddAttributes(servicePackageElement, servicePackageMap,listI);
+                  SOAPElement servicePackagePriceElement = AddDataElement(servicePackageElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Prices",""); 
+                  Map servicePackagePriceMap = (Map)servicePackageMap.get("PackagePrice");
+                  AddAttributes(servicePackagePriceElement, servicePackagePriceMap);
+                  SOAPElement servicePackagePartElement = AddDataElement(servicePackageElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Part",""); 
+                  Map servicePackagePartMap = (Map)servicePackageMap.get("PackagePart");
+                  AddAttributes(servicePackagePartElement, servicePackagePartMap);
+                  SOAPElement servicePackageWorkItemElement = AddDataElement(servicePackageElement,"http://dms.ri.as.daimler.com/DMSService/types","types","WorkItem",""); 
+                  Map servicePackageWorkItemMap = (Map)servicePackageMap.get("PackageWorkItem");
+                  AddAttributes(servicePackageWorkItemElement, servicePackageWorkItemMap);
+               }   
+           }
+       }
+       
+       return customerConcernElement;
+    }
     
     public SOAPElement putServiceMeasure(SOAPElement jobElement,Map serviceMeasureMap, Map notesMap, Map defectKeyMap, Map partMap, Map workItemMap,Map serviceMeasurePackageMap) throws SOAPException{
         SOAPElement serviceMeasureElement =  AddDataElement(jobElement,"http://dms.ri.as.daimler.com/DMSService/dms_sending","dms","ServiceMeasure","");
@@ -363,8 +484,27 @@ public class InitJob {
     
     
     public static void main(String[] args) throws SOAPException, IOException {
-        
-        Map customerConcernMap = new HashMap();
+        String xmldoc = new TestString().xc2;
+        MyLogging.log(Level.INFO, xmldoc);
+        Map XentryInitJobCustomerConcernMap;
+        XentryCustomerConcern xcc = new XentryCustomerConcern(xmldoc);
+        XentryInitJobCustomerConcernMap = xcc.getXentryInitJobCustomerConcernMap();
+        InitJob initJob = new InitJob();
+                SOAPMessage soap_message = initJob.getSOAPMessage();
+                initJob.putSOAPHeader(soap_message, "xxxxx", "xxxxxx");
+                SOAPBodyElement sendSyncDataRequestElement = initJob.putSoapBody(soap_message, "SERVICE_JOB_7", "UPDATE", "InitJob");
+                SOAPElement dataSynchElement = initJob.putDataSynch(sendSyncDataRequestElement);
+                SOAPElement structuredDataElement = initJob.putStructuredData(dataSynchElement);
+                SOAPElement messageElement = initJob.putMessage(structuredDataElement);
+                SOAPElement businessContextElement = initJob.putBusinessContext(messageElement, "WestStar DMS", "V1", "2.4", "REQUEST");
+                SOAPElement userContextElement = initJob.putUserContext(messageElement, "P0012CO", "mustermann", "de_DE");
+                SOAPElement processContextElement = initJob.putProcessContext(messageElement, "xxxx", "xxxx");
+                SOAPElement serviceMessageElement = initJob.putServiceMessage(messageElement);
+                SOAPElement initJobRequestElement = initJob.putInitJobRequest(serviceMessageElement);
+                SOAPElement jobElement = initJob.putJob(initJobRequestElement, "EUR");
+                SOAPElement customerConcernElement = initJob.putCustomerConcern(jobElement,XentryInitJobCustomerConcernMap);
+        soap_message.writeTo(System.out);
+        /*Map customerConcernMap = new HashMap();
         customerConcernMap.put("Classification","Unclassified");
         customerConcernMap.put("Title","Unclassified");
         customerConcernMap.put("ExternalId","1");
@@ -423,14 +563,14 @@ public class InitJob {
         sendSyncDataRequestElement.addAttribute(sendSyncDataRequestVersion, "1.4");
         sendSyncDataRequestElement.addAttribute(sendSyncDataRequestSchemaLocation, "http://stc.daimler.com/2009/08/DS/ext file:///C:/Xentry_Portal/Schnittstellen_Spezifikationen/XML-Schema_V_1.4.5/XML-Instanzen-V1.4.5/03_DataServer_Instanzen/XML-Artefacts/XML-Artefacts/StarConnectDataServerExt.xsd");
         sendSyncDataRequestElement.addAttribute(sendSyncDataRequestDs, "http://stc.daimler.com/2009/08/DS");
-        sendSyncDataRequestElement.addAttribute(sendSyncDataRequestXsi, "http://www.w3.org/2001/XMLSchema-instance");
+        sendSyncDataRequestElement.addAttribute(sendSyncDataRequestXsi, "http://www.w3.org/2001/XMLSchema-instance");*/
         
         
        
         
         
-        try{
-            AddDataElement(sendSyncDataRequestElement,"http://stc.daimler.com/2009/08/DS/ext","ext","type","SERVICE_JOB_7");
+       // try{
+            /*AddDataElement(sendSyncDataRequestElement,"http://stc.daimler.com/2009/08/DS/ext","ext","type","SERVICE_JOB_7");
             AddDataElement(sendSyncDataRequestElement,"http://stc.daimler.com/2009/08/DS/ext","ext","event","UPDATE");
             AddDataElement(sendSyncDataRequestElement,"http://stc.daimler.com/2009/08/DS/ext","ext","operation","InitJob");
             SOAPElement dataSynchElement = AddDataElement(sendSyncDataRequestElement,"http://stc.daimler.com/2009/08/DS/ext","ext","data","");
@@ -471,7 +611,7 @@ public class InitJob {
             QName jobElementCurrency = new QName("Currency");
             jobElement.addAttribute(jobElementCurrency, "EUR");
             
-            SOAPElement customerConcernElement = AddDataElement(jobElement,"http://dms.ri.as.daimler.com/DMSService/dms_sending","dms","CustomerConcern","");
+            /*SOAPElement customerConcernElement = AddDataElement(jobElement,"http://dms.ri.as.daimler.com/DMSService/dms_sending","dms","CustomerConcern","");
             AddAttributes(customerConcernElement, customerConcernMap);
             SOAPElement notesElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Notes","");
             AddAttributes(notesElement, notesMap);
@@ -526,16 +666,16 @@ public class InitJob {
                 }
             }
             
-            /*Iterator iter2 = soapBody.getChildElements();
+            Iterator iter2 = soapBody.getChildElements();
             SOAPBodyElement bodyElement = (SOAPBodyElement)iter2.next();
             String lastPrice = bodyElement.getValue();
             System.out.print("The last price for SUNW is ");*/
             
             
-        }catch(SOAPException ex){
-            ex.printStackTrace(new PrintWriter(ERRORS));                                                            
-            System.out.println("RefreshPrices ERROR::FileNotFoundException....."+ ERRORS.toString());
-        }
+       // }catch(SOAPException ex){
+       //     ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+         //   System.out.println("RefreshPrices ERROR::FileNotFoundException....."+ ERRORS.toString());
+        //}
     }
     
 }
