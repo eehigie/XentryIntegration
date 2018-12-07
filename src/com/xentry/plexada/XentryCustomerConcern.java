@@ -53,11 +53,11 @@ public class XentryCustomerConcern {
         try {
            this.handleXMLDoc();   
            this.parseXentryInitJobCustomerConcern();
-           this.parseCustomerConcern();
+           /*this.parseCustomerConcern();
            this.parseCustomerConcernNotesAndDefectKey();
            this.parsePlxCustomerConcernParts();
            this.parsePlxCustomerConcernServicePackage();
-           this.parsePlxCustomerConcernWorkItem();
+           this.parsePlxCustomerConcernWorkItem();*/
        } catch (ParserConfigurationException ex) {
            ex.printStackTrace(new PrintWriter(ERRORS));
            MyLogging.log(Level.SEVERE, "ERROR :"+ERRORS.toString());           
@@ -111,11 +111,11 @@ public class XentryCustomerConcern {
                 //XentryCustomerConcernMap.put(temp, tmpMap);
                 outputMap.put("XentryCustomerConcernMap", tmpMap);
                         
-                NodeList PlxServiceMeasureNotesAndDefectKeyElement = eElement.getElementsByTagName("PlxCustomerConcernNotes");
-                for (int temp3 = 0; temp3 < PlxServiceMeasureNotesAndDefectKeyElement.getLength(); temp3++) {
+                NodeList PlxCustomerConcernNotesAndDefectKeyElement = eElement.getElementsByTagName("PlxCustomerConcernNotes");
+                for (int temp3 = 0; temp3 < PlxCustomerConcernNotesAndDefectKeyElement.getLength(); temp3++) {
                     tmpMap_2 = new HashMap();
                     tmpMap_3 = new HashMap();
-                    Node nNode3 = PlxServiceMeasureNotesAndDefectKeyElement.item(temp3);
+                    Node nNode3 = PlxCustomerConcernNotesAndDefectKeyElement.item(temp3);
                     MyLogging.log(Level.INFO,"Current Element :" + nNode3.getNodeName());
                     Element eElement3 = (Element)nNode3;
                     MyLogging.log(Level.INFO,"Description : " + eElement3.getElementsByTagName("Area").item(0).getTextContent());

@@ -30,20 +30,28 @@ import javax.xml.soap.SOAPMessage;
  */
 public class XentryIntegration {
     private Map XentryInitJobCustomerConcernMap;
-    private Map XentryCustomerConcernMap;
+    private Map PlxXentryInitJobServiceMeasureMap;
+    private Map PlxXentryOrderMap = new HashMap();
+    private Map PlxXentryOrder_ServiceAdvisorMap = new HashMap();
+    private Map PlxXentryVehicleMap = new HashMap();
+    private Map PlxXentryCustomerMap = new HashMap();
+    private SiebelPropertySet psOrder;
+    private SiebelPropertySet psCustomer;
+    private SiebelPropertySet psVehicle;
+    /*private Map XentryCustomerConcernMap;
     private Map PlxCustomerConcernNotesMap;
     private Map PlxCustomerConcernDefectKeyMap;
     private Map PlxCustomerConcernPartsMap;
     private Map PlxCustomerConcernWorkItemMap;
     private Map PlxCustomerConcernServicePackageMap;
     
-    private Map PlxXentryServiceMeasureMap;
+    
     private Map PlxServiceMeasureNotesAndDefectKeyMap;
     private Map PlxServiceMeasurePartsMap;
     private Map PlxServiceMeasureWorkItem;
-    private Map PlxServiceMeasurePackageMap;
+    private Map PlxServiceMeasurePackageMap;*/
     private static final StringWriter ERRORS = new StringWriter();
-    private final Map EMPTY_MAP = new HashMap();
+    //private final Map EMPTY_MAP = new HashMap();
     
     public static String decompress(byte[] bytes) throws Exception {
     
@@ -59,8 +67,10 @@ public class XentryIntegration {
     }
     public void doInvokeMethod(String methodName, SiebelPropertySet input, SiebelPropertySet output) {
         
-        if(methodName.equalsIgnoreCase("InitJob")){
+        if(methodName.equalsIgnoreCase("InitJob")){            
             MyLogging.log(Level.INFO, "------In InitJob--------");
+            MyLogging.log(Level.INFO, "Getting Order,Customer and Vehicle PS from Input--------");
+            assignPropertySetsFromInpusPS(input);
             String customer_concern_xml = input.getProperty("CustomerConcernXML");
             //MyLogging.log(Level.INFO, "CustomerConcernXML : "+customer_concern_xml);
             MyLogging.log(Level.INFO, "getting Customer Concern data from customer_concern_xml ..... ");
@@ -73,14 +83,28 @@ public class XentryIntegration {
             PlxCustomerConcernWorkItemMap = xcc.getPlxCustomerConcernWorkItem();
             PlxCustomerConcernServicePackageMap = xcc.getPlxCustomerConcernServicePackage();*/
             
-            /*String service_measure_xml = input.getProperty("ServiceMeasureXML");
+            String service_measure_xml = input.getProperty("ServiceMeasureXML");
             MyLogging.log(Level.INFO, "getting Service Measure data from init_job_xml ..... ");
             XentryServiceMeasure xsm = new XentryServiceMeasure(service_measure_xml);
-            PlxXentryServiceMeasureMap = xsm.getXentryServiceMeasure();
+            PlxXentryInitJobServiceMeasureMap = xsm.getXentryInitJobServiceMeasureMap();
+            /*PlxXentryServiceMeasureMap = xsm.getXentryServiceMeasure();
             PlxServiceMeasureNotesAndDefectKeyMap = xsm.getServiceMeasureNotesAndDefectKey();
             PlxServiceMeasurePartsMap = xsm.getPlxServiceMeasureParts();
             PlxServiceMeasureWorkItem = xsm.getPlxServiceMeasureWorkItem();
             PlxServiceMeasurePackageMap = xsm.getPlxServiceMeasurePackageMap();*/
+            
+            MyLogging.log(Level.INFO, "getting Order Map and Service Advisor Map..... ");
+            XentryOrder xo = new XentryOrder(psOrder);
+            PlxXentryOrderMap = xo.getXentryOrderMap();
+            PlxXentryOrder_ServiceAdvisorMap = xo.getXentryOrder_ServiceAdvisorMap();
+            
+            MyLogging.log(Level.INFO, "getting Customer Map..... ");
+            XentryCustomer xc = new XentryCustomer(psCustomer);
+            PlxXentryCustomerMap = xc.getXentryCustomerMap();
+            
+            MyLogging.log(Level.INFO, "getting Vehicle Map..... ");
+            XentryVehicle xv = new XentryVehicle(psVehicle);
+            PlxXentryVehicleMap = xv.getXentryVehiclerMap();
             
             MyLogging.log(Level.INFO, "building request initjob xml ..... ");
             String initjob_currency = input.getProperty("Currency");
@@ -110,6 +134,10 @@ public class XentryIntegration {
                 SOAPElement initJobRequestElement = initJob.putInitJobRequest(serviceMessageElement);
                 SOAPElement jobElement = initJob.putJob(initJobRequestElement, initjob_currency);
                 SOAPElement customerConcernElement = initJob.putCustomerConcern(jobElement,XentryInitJobCustomerConcernMap);
+                SOAPElement serviceMeasureElement = initJob.putServiceMeasure(jobElement, PlxXentryInitJobServiceMeasureMap);
+                SOAPElement orderElement = initJob.putOrder(jobElement, PlxXentryOrderMap, PlxXentryOrder_ServiceAdvisorMap);
+                SOAPElement vehicleElement = initJob.putVehicle(jobElement, PlxXentryVehicleMap);
+                SOAPElement customerElement = initJob.putCustomer(jobElement, PlxXentryCustomerMap);
                 //SOAPElement customerConcernElement = initJob.putCustomerConcern(jobElement,XentryCustomerConcernMap, PlxCustomerConcernNotesMap, PlxCustomerConcernDefectKeyMap,PlxCustomerConcernPartsMap, PlxCustomerConcernWorkItemMap,PlxCustomerConcernServicePackageMap);
                 //SOAPElement serviceMeasureElement = initJob.putServiceMeasure(jobElement, serviceMeasureMap, notesMap, defectKeyMap, emptyMap, emptyMap, emptyMap);
                 //SOAPElement orderElement = initJob.putOrder(jobElement, orderMap, emptyMap);
@@ -140,6 +168,20 @@ public class XentryIntegration {
         
     }
     
+    private void assignPropertySetsFromInpusPS(SiebelPropertySet sps){
+        int psChild = sps.getChildCount();
+        for(int i = 0; i < psChild; ++i){
+          SiebelPropertySet tmpPs =  sps.getChild(i);
+          if(tmpPs.getType().equalsIgnoreCase("Order")){
+              psOrder = sps.getChild(i);
+          }else if(tmpPs.getType().equalsIgnoreCase("Vehicle")){
+              psVehicle = sps.getChild(i);
+          }else if(tmpPs.getType().equalsIgnoreCase("Customer")){
+              psCustomer = sps.getChild(i);
+          }
+        }
+    }
+    
     public static void main(String[] args) {
         SiebelPropertySet spsInput = new SiebelPropertySet();
         SiebelPropertySet spsOutput = new SiebelPropertySet();
@@ -151,7 +193,57 @@ public class XentryIntegration {
         spsInput.setProperty("Currency","EUR");
         spsInput.setProperty("TrackingId","TJ24_1.1");
         spsInput.setProperty("XentryURLEndpoint","https://srs-ds-int1.i.daimler.com/STARCDS/services/ExternalInterface");
+        
+        SiebelPropertySet psI = new SiebelPropertySet();
+        SiebelPropertySet psOrder = new SiebelPropertySet();
+        psOrder.setType("Order");
+        psOrder.setProperty("OrderId", "1234");
+        psOrder.setProperty("PaymentMethod", "optional payment");
+        psOrder.setProperty("ReceptionDateTime", "2016-05-01T12:00:00");
+        psOrder.setProperty("ReturnDateTime", "2016-05-02T12:00:00");
+        
+        SiebelPropertySet psOrderServiceAdvisor = new SiebelPropertySet();
+        psOrderServiceAdvisor.setProperty("FirstName", "Max");
+        psOrderServiceAdvisor.setProperty("LastName", "Mustermann");
+        psOrderServiceAdvisor.setProperty("Abbreviation", "testerde");
+        psOrder.addChild(psOrderServiceAdvisor);
+        
+        
+        SiebelPropertySet psVehicle = new SiebelPropertySet();
+        psVehicle.setType("Vehicle");
+        psVehicle.setProperty("FinOrVin", "WDD2040221A000658");
+        psVehicle.setProperty("FirstRegistrationDate", "2001-12-31");
+        psVehicle.setProperty("OdometerReading", "51002");
+        psVehicle.setProperty("OdometerUnit", "km");
+        psVehicle.setProperty("OperatingHours", "90000");
+        psVehicle.setProperty("RegistrationNumber", "ES NT 2511");
+        
+        SiebelPropertySet psCustomer = new SiebelPropertySet();
+        psCustomer.setType("Customer");
+        psCustomer.setProperty("FirstName", "Max");
+        psCustomer.setProperty("LastName", "Mustermann");
+        psCustomer.setProperty("CallbackFlag", "false");
+        psCustomer.setProperty("WaitingFlag", "false");
+        psCustomer.setProperty("EmailAddress", "max.mustermann@org.com");
+        psCustomer.setProperty("PhoneNumber", "123456789");
+        psCustomer.setProperty("Salutation", "Herr");
+        psCustomer.setProperty("Title", "Prof Dr");
+        psCustomer.setProperty("Preferences", "car wash");
+        psCustomer.setProperty("Number", "dmsNumber");
+        psCustomer.setProperty("IdSource", "central system");
+        psCustomer.setProperty("UCID", "1234567890123456789");
+        
+        spsInput.addChild(psOrder);
+        spsInput.addChild(psVehicle);
+        spsInput.addChild(psCustomer);
+                
+        
+        
         new XentryIntegration().doInvokeMethod("InitJob", spsInput, spsOutput);
+        
+        
+        
+        
         /*Map customerConcernMap = new HashMap();
         customerConcernMap.put("Classification","Unclassified");
         customerConcernMap.put("Title","Unclassified");

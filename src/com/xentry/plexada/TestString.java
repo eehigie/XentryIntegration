@@ -123,7 +123,7 @@ public class TestString {
 "><DMSStatus2\n" +
 ">Available</DMSStatus2\n" +
 "><EditType\n" +
-">&quot;Lock&quot;</EditType\n" +
+">Lock</EditType\n" +
 "><ExternalId\n" +
 "></ExternalId\n" +
 "><InvoiceCode\n" +
