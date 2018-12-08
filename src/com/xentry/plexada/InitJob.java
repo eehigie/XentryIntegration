@@ -274,10 +274,15 @@ public class InitJob {
         return initJobRequestElement;
     }
     
-    public SOAPElement putJob(SOAPElement initJobRequestElement,String currency) throws SOAPException{
+    public SOAPElement putJob(SOAPElement initJobRequestElement,String initjob_jobId, String currency) throws SOAPException{
         SOAPElement jobElement = AddDataElement(initJobRequestElement,"http://dms.ri.as.daimler.com/DMSService/dms_sending","dms","Job","");
         QName jobElementCurrency = new QName("Currency");
         jobElement.addAttribute(jobElementCurrency, currency);
+        if(!initjob_jobId.isEmpty()){
+           QName jobElementJobId = new QName("JobId");
+           jobElement.addAttribute(jobElementJobId, initjob_jobId); 
+        }
+            
         return jobElement;
     }
     
@@ -629,7 +634,7 @@ public class InitJob {
                 SOAPElement processContextElement = initJob.putProcessContext(messageElement, "xxxx", "xxxx");
                 SOAPElement serviceMessageElement = initJob.putServiceMessage(messageElement);
                 SOAPElement initJobRequestElement = initJob.putInitJobRequest(serviceMessageElement);
-                SOAPElement jobElement = initJob.putJob(initJobRequestElement, "EUR");
+                SOAPElement jobElement = initJob.putJob(initJobRequestElement, "EUR","");
                 SOAPElement customerConcernElement = initJob.putCustomerConcern(jobElement,XentryInitJobCustomerConcernMap);
                 SOAPElement serviceMeasureElement = initJob.putServiceMeasure(jobElement, XentryInitJobserviceMeasureMap);
         soap_message.writeTo(System.out);

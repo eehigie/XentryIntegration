@@ -107,18 +107,22 @@ public class XentryIntegration {
             PlxXentryVehicleMap = xv.getXentryVehiclerMap();
             
             MyLogging.log(Level.INFO, "building request initjob xml ..... ");
+            String siebel_login_name = input.getProperty("SiebelLoginName");
             String initjob_currency = input.getProperty("Currency");
+            String initjob_jobId = input.getProperty("JobId");
             String tracking_id = input.getProperty("TrackingId");
             String xentry_user = input.getProperty("XentryUser");
             String xentry_userpwd = input.getProperty("XentryUserPwd");
             String xentry_url_endpoint = input.getProperty("XentryURLEndpoint");
             String initjob_timestamp = getCurrentTimeStamp();
             
+            
             MyLogging.log(Level.INFO, "initjob_currency: "+initjob_currency);
             MyLogging.log(Level.INFO, "tracking_id: "+tracking_id);
             MyLogging.log(Level.INFO, "initjob_timestamp: "+initjob_timestamp);
             MyLogging.log(Level.INFO, "xentry_url_endpoint: "+xentry_url_endpoint);
-            
+            MyLogging.log(Level.INFO, "siebel_login_name: "+siebel_login_name);
+            MyLogging.log(Level.INFO, "initjob_jobId: "+initjob_jobId);
             try {
                 InitJob initJob = new InitJob();
                 SOAPMessage soap_message = initJob.getSOAPMessage();
@@ -127,12 +131,12 @@ public class XentryIntegration {
                 SOAPElement dataSynchElement = initJob.putDataSynch(sendSyncDataRequestElement);
                 SOAPElement structuredDataElement = initJob.putStructuredData(dataSynchElement);
                 SOAPElement messageElement = initJob.putMessage(structuredDataElement);
-                SOAPElement businessContextElement = initJob.putBusinessContext(messageElement, "WestStar DMS", "V1", "2.4", "REQUEST");
-                SOAPElement userContextElement = initJob.putUserContext(messageElement, "P0012CO", "mustermann", "de_DE");
+                SOAPElement businessContextElement = initJob.putBusinessContext(messageElement, "WestStar DMS(Siebel)", "IP2016", "2.4", "REQUEST");
+                SOAPElement userContextElement = initJob.putUserContext(messageElement, "P0012CO", siebel_login_name, "en_NG");
                 SOAPElement processContextElement = initJob.putProcessContext(messageElement, initjob_timestamp, tracking_id);
                 SOAPElement serviceMessageElement = initJob.putServiceMessage(messageElement);
                 SOAPElement initJobRequestElement = initJob.putInitJobRequest(serviceMessageElement);
-                SOAPElement jobElement = initJob.putJob(initJobRequestElement, initjob_currency);
+                SOAPElement jobElement = initJob.putJob(initJobRequestElement, initjob_currency,initjob_jobId);
                 SOAPElement customerConcernElement = initJob.putCustomerConcern(jobElement,XentryInitJobCustomerConcernMap);
                 SOAPElement serviceMeasureElement = initJob.putServiceMeasure(jobElement, PlxXentryInitJobServiceMeasureMap);
                 SOAPElement orderElement = initJob.putOrder(jobElement, PlxXentryOrderMap, PlxXentryOrder_ServiceAdvisorMap);
@@ -186,6 +190,7 @@ public class XentryIntegration {
         SiebelPropertySet spsInput = new SiebelPropertySet();
         SiebelPropertySet spsOutput = new SiebelPropertySet();
         spsInput.setProperty("methodName", "InitJob");
+        spsInput.setProperty("SiebelLoginName", "EEHIGIE");
         spsInput.setProperty("XentryUser", "TD02136");
         spsInput.setProperty("XentryUserPwd", "9Lh8hdyDtY");
         spsInput.setProperty("CustomerConcernXML", new TestString().xc2);
