@@ -34,12 +34,12 @@ public class XentryVehicle {
        tmpMap.put("OdometerUnit", spsVehicle.getProperty("OdometerUnit"));       
        tmpMap.put("OperatingHours", spsVehicle.getProperty("OperatingHours"));
        tmpMap.put("RegistrationNumber", spsVehicle.getProperty("RegistrationNumber"));
-       tmpMap.put("Salutation", spsVehicle.getProperty("Salutation"));
+       /*tmpMap.put("Salutation", spsVehicle.getProperty("Salutation"));
        tmpMap.put("Title", spsVehicle.getProperty("Title"));
        tmpMap.put("Preferences", spsVehicle.getProperty("Preferences"));       
        tmpMap.put("Number", spsVehicle.getProperty("Number"));
        tmpMap.put("IdSource", spsVehicle.getProperty("IdSource"));
-       tmpMap.put("UCID", spsVehicle.getProperty("UCID"));                    
+       tmpMap.put("UCID", spsVehicle.getProperty("UCID"));*/               
        return tmpMap;
     }
 

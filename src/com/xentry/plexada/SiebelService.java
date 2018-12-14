@@ -5,7 +5,13 @@
  */
 package com.xentry.plexada;
 
+import com.siebel.data.SiebelBusComp;
+import com.siebel.data.SiebelBusObject;
 import com.siebel.data.SiebelDataBean;
+import com.siebel.data.SiebelException;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -13,13 +19,58 @@ import com.siebel.data.SiebelDataBean;
  */
 public class SiebelService {
     
-    SiebelDataBean sieb_data_bean = null;
+    private static SiebelDataBean sieb_data_bean = null;
+    private static String responseCodeDescription;
+    private static String responseCodeGroup;
+    private static boolean responseStatus;
     
-    public SiebelService(SiebelDataBean sdb) {
+    public SiebelService(SiebelDataBean sdb,String code) throws SiebelException {
         sieb_data_bean = sdb;
+        responseCodeDescription = "";
+        responseCodeGroup = "";
+        responseStatus = true;
+        getCodeGroup(code);
     }
     
+    private static void getCodeGroup(String code) throws SiebelException{
+        SiebelBusObject boObj = sieb_data_bean.getBusObject("eAuto Fault Trouble");
+        SiebelBusComp bcObj = boObj.getBusComp("eAuto Fault Code");        
+        bcObj.setViewMode(3);
+        bcObj.clearToQuery();
+        bcObj.setSearchSpec("Code", code);
+        bcObj.executeQuery(true);						
+	if(bcObj.firstRecord()){
+            bcObj.activateField("Description");
+            bcObj.activateField("Group"); 
+            responseCodeDescription = bcObj.getFieldValue("Description");
+            responseCodeGroup = bcObj.getFieldValue("Group");
+            if(responseCodeGroup.equalsIgnoreCase("ERROR")){
+                responseStatus = false;
+            }
+        }                
+    }
+
+    public String getResponseCodeDescription() {
+        return responseCodeDescription;
+    }
+
+    public String getResponseCodeGroup() {
+        return responseCodeGroup;
+    }
+
+    public boolean isResponseStatus() {
+        return responseStatus;
+    }
     
-    
+    public static void main(String[] args) {
+        try {
+            SiebelService ss = new SiebelService(ApplicationsConnection.connectSiebelServer(),"STARCDS000907");
+        } catch (SiebelException ex) {
+            Logger.getLogger(SiebelService.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(SiebelService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+    }
     
 }

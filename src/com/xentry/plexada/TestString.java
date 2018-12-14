@@ -517,5 +517,81 @@ public final static String xc2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" 
 "      <ListOfPlxCustomerConcernWorkItem />\n" +
 "   </PlxXentryCustomerConcern>\n" +
 "</ListOfPlxXentryCustomerConcern>";  
-  
+
+public static final String initSuccessResp = "<soapenv:Envelope xmlns:soapenv=\"http://www.w3.org/2003/05/soap-envelope\">\n" +
+"   <soapenv:Body>\n" +
+"      <stcdsext:sendSyncDataResponse xmlns:stcds=\"http://stc.daimler.com/2009/08/DS\" xmlns:stcdsext=\"http://stc.daimler.com/2009/08/DS/ext\">\n" +
+"         <stcdsext:data>\n" +
+"            <stcds:compressedData stcds:compression=\"GZIP\">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</stcds:compressedData>\n" +
+"         </stcdsext:data>\n" +
+"         <stcdsext:responseCode>STARCDS001005</stcdsext:responseCode>\n" +
+"      </stcdsext:sendSyncDataResponse>\n" +
+"   </soapenv:Body>\n" +
+"</soapenv:Envelope>";
+
+
+ public static final String initFailResp = "<soapenv:Envelope xmlns:soapenv=\"http://www.w3.org/2003/05/soap-envelope\">\n" +
+"   <soapenv:Body>\n" +
+"      <stcdsext:sendSyncDataResponse xmlns:stcds=\"http://stc.daimler.com/2009/08/DS\" xmlns:stcdsext=\"http://stc.daimler.com/2009/08/DS/ext\">\n" +
+"         <stcdsext:responseCode>STARCDS000600</stcdsext:responseCode>\n" +
+"      </stcdsext:sendSyncDataResponse>\n" +
+"   </soapenv:Body>\n" +
+"</soapenv:Envelope>";
+
+ public static final String initResp = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+"<Message:Message xmlns:Message=\"http://dms.ri.as.daimler.com/DMSService\" xmlns=\"http://dms.ri.as.daimler.com/DMSService\" xmlns:ns1=\"http://stc.daimler.com/2009/08/DS\" xmlns:ns2=\"http://dms.ri.as.daimler.com/DMSService/types\" xmlns:ns3=\"http://dms.ri.as.daimler.com/DMSService/dms_sending\" xmlns:ns4=\"http://dms.ri.as.daimler.com/DMSService/xp_sending\" xmlns:soapenv=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:stcds=\"http://stc.daimler.com/2009/08/DS\" xmlns:stcdsext=\"http://stc.daimler.com/2009/08/DS/ext\">\n" +
+"   <BusinessContext>\n" +
+"      <DmsType>WestStar DMS(Siebel)</DmsType>\n" +
+"      <DmsVersion>IP2016</DmsVersion>\n" +
+"      <ServiceVersion>2.4</ServiceVersion>\n" +
+"      <Type>RESPONSE</Type>\n" +
+"   </BusinessContext>\n" +
+"   <UserContext>\n" +
+"      <DaimlerUserId>RETACC_STARCDS_XENTRY_INT4_00000</DaimlerUserId>\n" +
+"      <DmsUserId>EEHIGIE</DmsUserId>\n" +
+"      <UserLocale>en_NG</UserLocale>\n" +
+"   </UserContext>\n" +
+"   <ProcessContext>\n" +
+"      <Timestamp>2018-12-12T18:24:42.868+01:00</Timestamp>\n" +
+"      <TrackingId>TJ24_1.1</TrackingId>\n" +
+"   </ProcessContext>\n" +
+"   <ServiceMessage>\n" +
+"      <InitJobResponse BrowserUrl=\"https://xentry-int4.i.daimler.com/wps/mypoc?uri=erepko:openJob=53250\" JobId=\"53250\" />\n" +
+"   </ServiceMessage>\n" +
+"</Message:Message>";
+ 
 }

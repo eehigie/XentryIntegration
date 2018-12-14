@@ -274,14 +274,16 @@ public class InitJob {
         return initJobRequestElement;
     }
     
-    public SOAPElement putJob(SOAPElement initJobRequestElement,String initjob_jobId, String currency) throws SOAPException{
+    public SOAPElement putJob(SOAPElement initJobRequestElement,String currency) throws SOAPException{
         SOAPElement jobElement = AddDataElement(initJobRequestElement,"http://dms.ri.as.daimler.com/DMSService/dms_sending","dms","Job","");
-        QName jobElementCurrency = new QName("Currency");
-        jobElement.addAttribute(jobElementCurrency, currency);
-        if(!initjob_jobId.isEmpty()){
+        if(!currency.isEmpty()){
+            QName jobElementCurrency = new QName("Currency");
+            jobElement.addAttribute(jobElementCurrency, currency);
+        }
+        /*if(!initjob_jobId.isEmpty()){
            QName jobElementJobId = new QName("JobId");
            jobElement.addAttribute(jobElementJobId, initjob_jobId); 
-        }
+        }*/
             
         return jobElement;
     }
@@ -337,30 +339,36 @@ public class InitJob {
            MyLogging.log(Level.INFO, "COunt :"+j);
            Map xijccMap = (Map)xentryInitJobcustomerConcernMap.get(j);
            Map ccMap = (Map)xijccMap.get("XentryCustomerConcernMap");
-           customerConcernElement = AddDataElement(jobElement,"http://dms.ri.as.daimler.com/DMSService/dms_sending","dms","CustomerConcern","");
+           
            if(!ccMap.isEmpty()){
+              customerConcernElement = AddDataElement(jobElement,"http://dms.ri.as.daimler.com/DMSService/dms_sending","dms","CustomerConcern","");
               AddAttributes(customerConcernElement, ccMap); 
            }
-           notesElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Notes","");
+           
+           
            Map notesMap = (Map)xijccMap.get("PlxCustomerConcernNotesMap");
            if(!notesMap.isEmpty()){
+              notesElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Notes","");
               AddAttributes(notesElement, notesMap);  
            }
-           defectKeyElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","DefectKey",""); 
+           
+           
            Map defectKeyMap = (Map)xijccMap.get("PlxCustomerConcernDefectKeyMap");
            if(!defectKeyMap.isEmpty()){
+               defectKeyElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","DefectKey",""); 
                AddAttributes(defectKeyElement, defectKeyMap);  
            }
            
            Map pMap = (Map)xijccMap.get("PlxCustomerConcernPartsMap");
            for(int j2 = 0; j2 < pMap.size();++j2){
-              partElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Part",""); 
-              Map partMap = (Map)pMap.get(j2);
-              AddAttributes(partElement, partMap,"PartPrice");
-              if(!partMap.isEmpty()){                                        
-                    SOAPElement partPriceElement = AddDataElement(partElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Prices",""); 
+              
+              Map partMap = (Map)pMap.get(j2);                            
+              if(!partMap.isEmpty()){
+                    partElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Part",""); 
+                    AddAttributes(partElement, partMap,"PartPrice");
                     Map partPriceMap = (Map)partMap.get("PartPrice");
                     if(!partPriceMap.isEmpty()){
+                        SOAPElement partPriceElement = AddDataElement(partElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Prices",""); 
                         AddAttributes(partPriceElement, partPriceMap);  
                     }   
               }
@@ -368,15 +376,14 @@ public class InitJob {
           
            
            Map wkItmMap = (Map)xijccMap.get("PlxCustomerConcernWorkItemMap");
-           for(int j2 = 0; j2 < wkItmMap.size();++j2){
-              workItemElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","WorkItem","");
-              Map workItemMap = (Map)wkItmMap.get(j2);              
-              
-              if(!workItemMap.isEmpty()){  
-                    AddAttributes(workItemElement, workItemMap,listI);
-                    SOAPElement workItemPriceElement = AddDataElement(workItemElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Prices",""); 
+           for(int j2 = 0; j2 < wkItmMap.size();++j2){              
+              Map workItemMap = (Map)wkItmMap.get(j2);                            
+              if(!workItemMap.isEmpty()){
+                    workItemElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","WorkItem","");
+                    AddAttributes(workItemElement, workItemMap,listI);                    
                     Map workItemPriceMap = (Map)workItemMap.get("WorkItemPrice");
                     if(!workItemPriceMap.isEmpty()){
+                        SOAPElement workItemPriceElement = AddDataElement(workItemElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Prices",""); 
                         AddAttributes(workItemPriceElement, workItemPriceMap);  
                     }   
               }
@@ -384,22 +391,31 @@ public class InitJob {
                                             
            Map srvPkgMap = (Map)xijccMap.get("PlxCustomerConcernServicePackageMap");           
            for(int j2 = 0; j2 < srvPkgMap.size();++j2){
-               servicePackageElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","ServicePackage","");
+               
                Map servicePackageMap = (Map)srvPkgMap.get(j2);
                if(!servicePackageMap.isEmpty()){
+                   servicePackageElement = AddDataElement(customerConcernElement,"http://dms.ri.as.daimler.com/DMSService/types","types","ServicePackage","");
                   AddAttributes(servicePackageElement, servicePackageMap,listI);
-                  SOAPElement servicePackagePriceElement = AddDataElement(servicePackageElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Prices",""); 
+                  
                   Map servicePackagePriceMap = (Map)servicePackageMap.get("PackagePrice");
-                  if(!servicePackagePriceMap.isEmpty())
-                    AddAttributes(servicePackagePriceElement, servicePackagePriceMap);
-                  SOAPElement servicePackagePartElement = AddDataElement(servicePackageElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Part",""); 
+                  if(!servicePackagePriceMap.isEmpty()){
+                      SOAPElement servicePackagePriceElement = AddDataElement(servicePackageElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Prices",""); 
+                      AddAttributes(servicePackagePriceElement, servicePackagePriceMap);
+                  }
+                                      
                   Map servicePackagePartMap = (Map)servicePackageMap.get("PackagePart");
-                  if(!servicePackagePartMap.isEmpty())
-                    AddAttributes(servicePackagePartElement, servicePackagePartMap);
-                  SOAPElement servicePackageWorkItemElement = AddDataElement(servicePackageElement,"http://dms.ri.as.daimler.com/DMSService/types","types","WorkItem",""); 
+                  if(!servicePackagePartMap.isEmpty()){
+                      SOAPElement servicePackagePartElement = AddDataElement(servicePackageElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Part",""); 
+                      AddAttributes(servicePackagePartElement, servicePackagePartMap);
+                  }
+                    
+                  
                   Map servicePackageWorkItemMap = (Map)servicePackageMap.get("PackageWorkItem");
-                  if(!servicePackageWorkItemMap.isEmpty())
-                    AddAttributes(servicePackageWorkItemElement, servicePackageWorkItemMap);
+                  if(!servicePackageWorkItemMap.isEmpty()){
+                      SOAPElement servicePackageWorkItemElement = AddDataElement(servicePackageElement,"http://dms.ri.as.daimler.com/DMSService/types","types","WorkItem",""); 
+                      AddAttributes(servicePackageWorkItemElement, servicePackageWorkItemMap);
+                  }
+                    
                }   
            }
        }
@@ -417,30 +433,35 @@ public class InitJob {
        for(int i=0; i < xentryInitJobServiceMeasureMap.size(); ++i){
            Map tmpMap = (Map)xentryInitJobServiceMeasureMap.get(i);
            Map serviceMeasureMap = (Map)tmpMap.get("XentryServiceMeasureMap");
-           serviceMeasureElement =  AddDataElement(jobElement,"http://dms.ri.as.daimler.com/DMSService/dms_sending","dms","ServiceMeasure","");
-           if(!serviceMeasureMap.isEmpty())
+           if(!serviceMeasureMap.isEmpty()){
+            serviceMeasureElement =  AddDataElement(jobElement,"http://dms.ri.as.daimler.com/DMSService/dms_sending","dms","ServiceMeasure","");           
             AddAttributes(serviceMeasureElement, serviceMeasureMap);            
-           
-           Map notesMap = (Map)tmpMap.get("PlxServiceMeasureNotesMap");
-           SOAPElement notesElement = AddDataElement(serviceMeasureElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Notes","");
+           }
+                      
+           Map notesMap = (Map)tmpMap.get("PlxServiceMeasureNotesMap");           
            if(!notesMap.isEmpty()){
+            SOAPElement notesElement = AddDataElement(serviceMeasureElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Notes","");
             AddAttributes(notesElement, notesMap);  
            }
            
            Map defectKeyMap = (Map)tmpMap.get("PlxServiceMeasureDefectKeyMap");
-           SOAPElement defectKeyElement =  AddDataElement(serviceMeasureElement,"http://dms.ri.as.daimler.com/DMSService/types","types","DefectKey","");
-           if(!defectKeyMap.isEmpty())
-               AddAttributes(defectKeyElement, defectKeyMap); 
            
-           
-                   
+           if(!defectKeyMap.isEmpty()){
+              SOAPElement defectKeyElement =  AddDataElement(serviceMeasureElement,"http://dms.ri.as.daimler.com/DMSService/types","types","DefectKey","");
+              AddAttributes(defectKeyElement, defectKeyMap); 
+           }
+               
+                                         
            Map partMap = (Map)tmpMap.get("PlxServiceMeasurePartsMap");
            if(!partMap.isEmpty()){
                for(int j = 0; j < partMap.size();++j){
                 Map partMap_2 =  (Map)partMap.get(j);
-                SOAPElement partElement = AddDataElement(serviceMeasureElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Part","");
-                if(!partMap_2.isEmpty())
-                    AddAttributes(partElement, partMap_2); 
+                
+                if(!partMap_2.isEmpty()){
+                  SOAPElement partElement = AddDataElement(serviceMeasureElement,"http://dms.ri.as.daimler.com/DMSService/types","types","Part","");
+                  AddAttributes(partElement, partMap_2); 
+                }
+                    
                }
            }
         
@@ -448,9 +469,12 @@ public class InitJob {
         if(!workItemMap.isEmpty()){
             for(int j = 0; j < workItemMap.size();++j){
                Map workItemMap_2 = (Map)workItemMap.get(j);
-               SOAPElement workItemElement = AddDataElement(serviceMeasureElement,"http://dms.ri.as.daimler.com/DMSService/types","types","WorkItem","");                
-               if(!workItemMap_2.isEmpty())
-                  AddAttributes(workItemElement, workItemMap_2);  
+               
+               if(!workItemMap_2.isEmpty()){
+                   SOAPElement workItemElement = AddDataElement(serviceMeasureElement,"http://dms.ri.as.daimler.com/DMSService/types","types","WorkItem","");                
+                   AddAttributes(workItemElement, workItemMap_2);
+               }
+                   
             }
            
         }
@@ -634,7 +658,7 @@ public class InitJob {
                 SOAPElement processContextElement = initJob.putProcessContext(messageElement, "xxxx", "xxxx");
                 SOAPElement serviceMessageElement = initJob.putServiceMessage(messageElement);
                 SOAPElement initJobRequestElement = initJob.putInitJobRequest(serviceMessageElement);
-                SOAPElement jobElement = initJob.putJob(initJobRequestElement, "EUR","");
+                SOAPElement jobElement = initJob.putJob(initJobRequestElement, "EUR");
                 SOAPElement customerConcernElement = initJob.putCustomerConcern(jobElement,XentryInitJobCustomerConcernMap);
                 SOAPElement serviceMeasureElement = initJob.putServiceMeasure(jobElement, XentryInitJobserviceMeasureMap);
         soap_message.writeTo(System.out);

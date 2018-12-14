@@ -17,12 +17,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.soap.SOAPBodyElement;
 import javax.xml.soap.SOAPConnection;
 import javax.xml.soap.SOAPConnectionFactory;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -71,6 +73,102 @@ public class XentryIntegration {
             MyLogging.log(Level.INFO, "------In InitJob--------");
             MyLogging.log(Level.INFO, "Getting Order,Customer and Vehicle PS from Input--------");
             assignPropertySetsFromInpusPS(input);
+            String customer_concern_xml = input.getProperty("CustomerConcernXML");            
+            MyLogging.log(Level.INFO, "getting Customer Concern data from customer_concern_xml ..... ");
+            XentryCustomerConcern xcc = new XentryCustomerConcern(customer_concern_xml);
+            XentryInitJobCustomerConcernMap = xcc.getXentryInitJobCustomerConcernMap();
+                        
+            String service_measure_xml = input.getProperty("ServiceMeasureXML");
+            MyLogging.log(Level.INFO, "getting Service Measure data from init_job_xml ..... ");
+            XentryServiceMeasure xsm = new XentryServiceMeasure(service_measure_xml);
+            PlxXentryInitJobServiceMeasureMap = xsm.getXentryInitJobServiceMeasureMap();
+                        
+            MyLogging.log(Level.INFO, "getting Order Map and Service Advisor Map..... ");
+            XentryOrder xo = new XentryOrder(psOrder);
+            PlxXentryOrderMap = xo.getXentryOrderMap();
+            PlxXentryOrder_ServiceAdvisorMap = xo.getXentryOrder_ServiceAdvisorMap();
+            
+            MyLogging.log(Level.INFO, "getting Customer Map..... ");
+            XentryCustomer xc = new XentryCustomer(psCustomer);
+            PlxXentryCustomerMap = xc.getXentryCustomerMap();
+            
+            MyLogging.log(Level.INFO, "getting Vehicle Map..... ");
+            XentryVehicle xv = new XentryVehicle(psVehicle);
+            PlxXentryVehicleMap = xv.getXentryVehiclerMap();
+            
+            MyLogging.log(Level.INFO, "building request initjob xml ..... ");
+            String siebel_login_name = input.getProperty("SiebelLoginName");
+            String initjob_currency = input.getProperty("Currency");            
+            String tracking_id = input.getProperty("TrackingId");
+            String xentry_user = input.getProperty("XentryUser");
+            String xentry_userpwd = input.getProperty("XentryUserPwd");
+            String xentry_url_endpoint = input.getProperty("XentryURLEndpoint");
+            String initjob_timestamp = getCurrentTimeStamp();
+            
+            
+            MyLogging.log(Level.INFO, "initjob_currency: "+initjob_currency);
+            MyLogging.log(Level.INFO, "tracking_id: "+tracking_id);
+            MyLogging.log(Level.INFO, "initjob_timestamp: "+initjob_timestamp);
+            MyLogging.log(Level.INFO, "xentry_url_endpoint: "+xentry_url_endpoint);
+            MyLogging.log(Level.INFO, "siebel_login_name: "+siebel_login_name);
+            
+            try {
+                InitJob initJob = new InitJob();
+                SOAPMessage soap_message = initJob.getSOAPMessage();
+                initJob.putSOAPHeader(soap_message, xentry_user, xentry_userpwd);
+                SOAPBodyElement sendSyncDataRequestElement = initJob.putSoapBody(soap_message, "SERVICE_JOB_7", "UPDATE", "InitJob");
+                SOAPElement dataSynchElement = initJob.putDataSynch(sendSyncDataRequestElement);
+                SOAPElement structuredDataElement = initJob.putStructuredData(dataSynchElement);
+                SOAPElement messageElement = initJob.putMessage(structuredDataElement);
+                SOAPElement businessContextElement = initJob.putBusinessContext(messageElement, "WestStar DMS(Siebel)", "IP2016", "2.4", "REQUEST");
+                SOAPElement userContextElement = initJob.putUserContext(messageElement, "P0012CO", siebel_login_name, "en_NG");
+                SOAPElement processContextElement = initJob.putProcessContext(messageElement, initjob_timestamp, tracking_id);
+                SOAPElement serviceMessageElement = initJob.putServiceMessage(messageElement);
+                SOAPElement initJobRequestElement = initJob.putInitJobRequest(serviceMessageElement);                
+                SOAPElement jobElement = initJob.putJob(initJobRequestElement, initjob_currency);
+                //SOAPElement customerConcernElement = initJob.putCustomerConcern(jobElement,XentryInitJobCustomerConcernMap);
+                //SOAPElement serviceMeasureElement = initJob.putServiceMeasure(jobElement, PlxXentryInitJobServiceMeasureMap);
+                SOAPElement orderElement = initJob.putOrder(jobElement, PlxXentryOrderMap, PlxXentryOrder_ServiceAdvisorMap);
+                SOAPElement vehicleElement = initJob.putVehicle(jobElement, PlxXentryVehicleMap);
+                SOAPElement customerElement = initJob.putCustomer(jobElement, PlxXentryCustomerMap);
+                                
+                MyLogging.log(Level.INFO, "OUTPUT REQUEST XML ......................");
+                soap_message.writeTo(System.out);
+            
+                SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
+                SOAPConnection connection = soapConnectionFactory.createConnection();
+                URL endpoint = new URL(xentry_url_endpoint);
+                SOAPMessage response = connection.call(soap_message, endpoint);
+                connection.close();
+            
+                ParseResponse response_msg = new ParseResponse(response);                
+                String compressedData = response_msg.getCompressedData();
+                String responseCode = response_msg.getResponseCode();
+                
+                MyLogging.log(Level.INFO, "responseCode....."+ responseCode);
+                //byte[] resultData = response_msg.unzipData(compressedData);
+                //String sResultData = new String(resultData);
+                //MyLogging.log(Level.INFO, "decompressedData....."+ sResultData);
+            } catch (SOAPException ex) {
+                ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+                MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
+            } catch (IOException ex) {
+                ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+                MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
+            } catch (ParserConfigurationException ex) {
+                ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+                MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
+            } catch (SAXException ex) {
+                ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+                MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
+            } catch (Exception ex) {
+                ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+                MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
+            }                        
+        }else if(methodName.equalsIgnoreCase("InitJobErepko")){
+             MyLogging.log(Level.INFO, "------In InitJob--------");
+            MyLogging.log(Level.INFO, "Getting Order,Customer and Vehicle PS from Input--------");
+            assignPropertySetsFromInpusPS(input);
             String customer_concern_xml = input.getProperty("CustomerConcernXML");
             //MyLogging.log(Level.INFO, "CustomerConcernXML : "+customer_concern_xml);
             MyLogging.log(Level.INFO, "getting Customer Concern data from customer_concern_xml ..... ");
@@ -109,7 +207,7 @@ public class XentryIntegration {
             MyLogging.log(Level.INFO, "building request initjob xml ..... ");
             String siebel_login_name = input.getProperty("SiebelLoginName");
             String initjob_currency = input.getProperty("Currency");
-            String initjob_jobId = input.getProperty("JobId");
+            //String initjob_jobId = input.getProperty("JobId");
             String tracking_id = input.getProperty("TrackingId");
             String xentry_user = input.getProperty("XentryUser");
             String xentry_userpwd = input.getProperty("XentryUserPwd");
@@ -122,7 +220,7 @@ public class XentryIntegration {
             MyLogging.log(Level.INFO, "initjob_timestamp: "+initjob_timestamp);
             MyLogging.log(Level.INFO, "xentry_url_endpoint: "+xentry_url_endpoint);
             MyLogging.log(Level.INFO, "siebel_login_name: "+siebel_login_name);
-            MyLogging.log(Level.INFO, "initjob_jobId: "+initjob_jobId);
+            //MyLogging.log(Level.INFO, "initjob_jobId: "+initjob_jobId);
             try {
                 InitJob initJob = new InitJob();
                 SOAPMessage soap_message = initJob.getSOAPMessage();
@@ -136,7 +234,8 @@ public class XentryIntegration {
                 SOAPElement processContextElement = initJob.putProcessContext(messageElement, initjob_timestamp, tracking_id);
                 SOAPElement serviceMessageElement = initJob.putServiceMessage(messageElement);
                 SOAPElement initJobRequestElement = initJob.putInitJobRequest(serviceMessageElement);
-                SOAPElement jobElement = initJob.putJob(initJobRequestElement, initjob_currency,initjob_jobId);
+                //SOAPElement jobElement = initJob.putJob(initJobRequestElement, initjob_currency,initjob_jobId);
+                SOAPElement jobElement = initJob.putJob(initJobRequestElement, initjob_currency);
                 SOAPElement customerConcernElement = initJob.putCustomerConcern(jobElement,XentryInitJobCustomerConcernMap);
                 SOAPElement serviceMeasureElement = initJob.putServiceMeasure(jobElement, PlxXentryInitJobServiceMeasureMap);
                 SOAPElement orderElement = initJob.putOrder(jobElement, PlxXentryOrderMap, PlxXentryOrder_ServiceAdvisorMap);
@@ -151,23 +250,35 @@ public class XentryIntegration {
                 MyLogging.log(Level.INFO, "OUTPUT REQUEST XML ......................");
                 soap_message.writeTo(System.out);
             
-                /*SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
+                SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
                 SOAPConnection connection = soapConnectionFactory.createConnection();
                 URL endpoint = new URL(xentry_url_endpoint);
                 SOAPMessage response = connection.call(soap_message, endpoint);
                 connection.close();
             
                 ParseResponse response_msg = new ParseResponse(response);
-                response_msg.getResponseNodes();*/                    
+                //response_msg.getResponseNodes();
+                String compressedData = response_msg.getCompressedData();
+                //String decompressedData = response_msg.decompress(compressedData);
+                byte[] resultData = response_msg.unzipData(compressedData);
+                String sResultData = new String(resultData);
+               MyLogging.log(Level.INFO, "decompressedData....."+ sResultData);
             } catch (SOAPException ex) {
                 ex.printStackTrace(new PrintWriter(ERRORS));                                                            
                 MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
             } catch (IOException ex) {
                 ex.printStackTrace(new PrintWriter(ERRORS));                                                            
                 MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
+            } catch (ParserConfigurationException ex) {
+                ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+                MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
+            } catch (SAXException ex) {
+                ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+                MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
+            } catch (Exception ex) {
+                ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+                MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
             }
-            
-            
         }
         
     }
