@@ -29,21 +29,24 @@ public class SiebelService {
         responseCodeDescription = "";
         responseCodeGroup = "";
         responseStatus = true;
-        getCodeGroup(code);
+        getCodeGroup(code);        
     }
     
     private static void getCodeGroup(String code) throws SiebelException{
         SiebelBusObject boObj = sieb_data_bean.getBusObject("eAuto Fault Trouble");
         SiebelBusComp bcObj = boObj.getBusComp("eAuto Fault Code");        
+        bcObj.activateField("Description");
+        bcObj.activateField("Group Code"); 
         bcObj.setViewMode(3);
         bcObj.clearToQuery();
-        bcObj.setSearchSpec("Code", code);
-        bcObj.executeQuery(true);						
+        bcObj.setSearchSpec("Code Name", code);
+        bcObj.executeQuery2(true, true);						
 	if(bcObj.firstRecord()){
-            bcObj.activateField("Description");
-            bcObj.activateField("Group"); 
+            System.out.println("In record:");            
             responseCodeDescription = bcObj.getFieldValue("Description");
-            responseCodeGroup = bcObj.getFieldValue("Group");
+            responseCodeGroup = bcObj.getFieldValue("Group Code");
+            MyLogging.log(Level.INFO,"responseCodeDescription:"+responseCodeDescription);
+            MyLogging.log(Level.INFO,"responseCodeGroup:"+responseCodeGroup);
             if(responseCodeGroup.equalsIgnoreCase("ERROR")){
                 responseStatus = false;
             }
@@ -64,7 +67,8 @@ public class SiebelService {
     
     public static void main(String[] args) {
         try {
-            SiebelService ss = new SiebelService(ApplicationsConnection.connectSiebelServer(),"STARCDS000907");
+            SiebelService ss = new SiebelService(ApplicationsConnection.connectSiebelServer(),"STARCDS001002");
+            System.out.println("responseStatus:"+responseStatus);
         } catch (SiebelException ex) {
             Logger.getLogger(SiebelService.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {

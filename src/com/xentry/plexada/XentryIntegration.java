@@ -5,9 +5,12 @@
  */
 package com.xentry.plexada;
 
+import com.siebel.data.SiebelDataBean;
+import com.siebel.data.SiebelException;
 import com.siebel.data.SiebelPropertySet;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
@@ -16,6 +19,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.soap.SOAPBodyElement;
@@ -40,6 +44,9 @@ public class XentryIntegration {
     private SiebelPropertySet psOrder;
     private SiebelPropertySet psCustomer;
     private SiebelPropertySet psVehicle;
+    private SiebelDataBean sdb;
+    private String browserURL;
+    private String jobId;
     /*private Map XentryCustomerConcernMap;
     private Map PlxCustomerConcernNotesMap;
     private Map PlxCustomerConcernDefectKeyMap;
@@ -73,16 +80,7 @@ public class XentryIntegration {
             MyLogging.log(Level.INFO, "------In InitJob--------");
             MyLogging.log(Level.INFO, "Getting Order,Customer and Vehicle PS from Input--------");
             assignPropertySetsFromInpusPS(input);
-            String customer_concern_xml = input.getProperty("CustomerConcernXML");            
-            MyLogging.log(Level.INFO, "getting Customer Concern data from customer_concern_xml ..... ");
-            XentryCustomerConcern xcc = new XentryCustomerConcern(customer_concern_xml);
-            XentryInitJobCustomerConcernMap = xcc.getXentryInitJobCustomerConcernMap();
-                        
-            String service_measure_xml = input.getProperty("ServiceMeasureXML");
-            MyLogging.log(Level.INFO, "getting Service Measure data from init_job_xml ..... ");
-            XentryServiceMeasure xsm = new XentryServiceMeasure(service_measure_xml);
-            PlxXentryInitJobServiceMeasureMap = xsm.getXentryInitJobServiceMeasureMap();
-                        
+               
             MyLogging.log(Level.INFO, "getting Order Map and Service Advisor Map..... ");
             XentryOrder xo = new XentryOrder(psOrder);
             PlxXentryOrderMap = xo.getXentryOrderMap();
@@ -113,6 +111,7 @@ public class XentryIntegration {
             MyLogging.log(Level.INFO, "siebel_login_name: "+siebel_login_name);
             
             try {
+                MyLogging.log(Level.INFO, "Building INIT JOB XML--------");
                 InitJob initJob = new InitJob();
                 SOAPMessage soap_message = initJob.getSOAPMessage();
                 initJob.putSOAPHeader(soap_message, xentry_user, xentry_userpwd);
@@ -126,14 +125,13 @@ public class XentryIntegration {
                 SOAPElement serviceMessageElement = initJob.putServiceMessage(messageElement);
                 SOAPElement initJobRequestElement = initJob.putInitJobRequest(serviceMessageElement);                
                 SOAPElement jobElement = initJob.putJob(initJobRequestElement, initjob_currency);
-                //SOAPElement customerConcernElement = initJob.putCustomerConcern(jobElement,XentryInitJobCustomerConcernMap);
-                //SOAPElement serviceMeasureElement = initJob.putServiceMeasure(jobElement, PlxXentryInitJobServiceMeasureMap);
                 SOAPElement orderElement = initJob.putOrder(jobElement, PlxXentryOrderMap, PlxXentryOrder_ServiceAdvisorMap);
                 SOAPElement vehicleElement = initJob.putVehicle(jobElement, PlxXentryVehicleMap);
                 SOAPElement customerElement = initJob.putCustomer(jobElement, PlxXentryCustomerMap);
                                 
-                MyLogging.log(Level.INFO, "OUTPUT REQUEST XML ......................");
+                MyLogging.log(Level.INFO, "OUTPUT REQUEST XML ......................");                
                 soap_message.writeTo(System.out);
+              
             
                 SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
                 SOAPConnection connection = soapConnectionFactory.createConnection();
@@ -143,12 +141,23 @@ public class XentryIntegration {
             
                 ParseResponse response_msg = new ParseResponse(response);                
                 String compressedData = response_msg.getCompressedData();
-                String responseCode = response_msg.getResponseCode();
-                
-                MyLogging.log(Level.INFO, "responseCode....."+ responseCode);
-                //byte[] resultData = response_msg.unzipData(compressedData);
-                //String sResultData = new String(resultData);
-                //MyLogging.log(Level.INFO, "decompressedData....."+ sResultData);
+                String decompressedData = response_msg.decompress(compressedData);
+                String responseCode = response_msg.getResponseCode();                
+                MyLogging.log(Level.INFO, "responseCode....."+ responseCode);                
+                sdb = ApplicationsConnection.connectSiebelServer();
+                SiebelService ssr = new SiebelService(sdb,responseCode);
+                if(ssr.isResponseStatus()){
+                    response_msg.handleResponse(decompressedData);
+                    browserURL = response_msg.getBrowserUrl();
+                    jobId = response_msg.getJobId();
+                    output.setProperty("Response_Status", "Success");
+                    output.setProperty("BrowserURL", browserURL);
+                    output.setProperty("JobId", jobId);
+                }else{
+                    output.setProperty("Response_Status", "Error");
+                    output.setProperty("ErrorCode", responseCode);
+                    output.setProperty("ErrorMessage", ssr.getResponseCodeDescription());
+                }                
             } catch (SOAPException ex) {
                 ex.printStackTrace(new PrintWriter(ERRORS));                                                            
                 MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
@@ -164,9 +173,18 @@ public class XentryIntegration {
             } catch (Exception ex) {
                 ex.printStackTrace(new PrintWriter(ERRORS));                                                            
                 MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
+            }finally{
+                if(sdb != null){
+                    try {
+                        sdb.logoff();
+                    } catch (SiebelException ex) {
+                        ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+                        MyLogging.log(Level.SEVERE, "Error, Logging off....."+ ERRORS.toString());
+                    }
+                }
             }                        
         }else if(methodName.equalsIgnoreCase("InitJobErepko")){
-             MyLogging.log(Level.INFO, "------In InitJob--------");
+            MyLogging.log(Level.INFO, "------In InitJob--------");
             MyLogging.log(Level.INFO, "Getting Order,Customer and Vehicle PS from Input--------");
             assignPropertySetsFromInpusPS(input);
             String customer_concern_xml = input.getProperty("CustomerConcernXML");
@@ -260,9 +278,9 @@ public class XentryIntegration {
                 //response_msg.getResponseNodes();
                 String compressedData = response_msg.getCompressedData();
                 //String decompressedData = response_msg.decompress(compressedData);
-                byte[] resultData = response_msg.unzipData(compressedData);
-                String sResultData = new String(resultData);
-               MyLogging.log(Level.INFO, "decompressedData....."+ sResultData);
+                //byte[] resultData = response_msg.unzipData(compressedData);
+               // String sResultData = new String(resultData);
+               //MyLogging.log(Level.INFO, "decompressedData....."+ sResultData);
             } catch (SOAPException ex) {
                 ex.printStackTrace(new PrintWriter(ERRORS));                                                            
                 MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
@@ -278,6 +296,15 @@ public class XentryIntegration {
             } catch (Exception ex) {
                 ex.printStackTrace(new PrintWriter(ERRORS));                                                            
                 MyLogging.log(Level.SEVERE, "InitJob....."+ ERRORS.toString());
+            }finally{
+                if(sdb != null){
+                    try {
+                        sdb.logoff();
+                    } catch (SiebelException ex) {
+                        ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+                        MyLogging.log(Level.SEVERE, "Error, Logging off....."+ ERRORS.toString());
+                    }
+                }
             }
         }
         

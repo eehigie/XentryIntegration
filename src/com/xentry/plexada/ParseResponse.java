@@ -49,7 +49,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
-import org.apache.commons.codec.binary.Base64;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
@@ -194,39 +193,6 @@ public class ParseResponse {
        return nodeList;
     }
     
-    public byte[]  unzipData(String str) throws UnsupportedEncodingException, IOException{
-         //byte compBytesData [ ] = boutStream.toByteArray();      
-         String str2 = "eNrzys/IU8gqzS1ITVHIL0stUijJSFUoT8zJAQB38wlC";
-         byte[] compBytesData = str2.getBytes();
-         InputStream targetStream = new ByteArrayInputStream(str2.getBytes());
-         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        //GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(compBytesData));
-        final byte[] buf = new byte[4096];
-        int bytesRead;
-        while ((bytesRead = targetStream.read(buf)) != -1){
-            out.write(buf, 0, bytesRead);
-        }
-       GZIPInputStream gzip = new GZIPInputStream ( new ByteArrayInputStream(buf));
-        return out.toByteArray();
-        //unzip the string
-        /*       GZIPInputStream gzip = new GZIPInputStream ( new ByteArrayInputStream(compBytesData));
-               //GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(str.getBytes("UTF-8")));
-               //Read the unzip content
-               BufferedReader zipReader = new BufferedReader ( new InputStreamReader ( gzip ) ) ;
-               char chars [ ] = new char [ 1024 ] ;
-               int len = 0;
-               StringBuffer xmlStr = new StringBuffer ( ) ;
-               //Write chunks of characters to the StringBuffer
-               while ( ( len = zipReader.read ( chars, 0, chars.length ) ) >= 0 )
-               {
-                    System.out.println("Appending " + chars.toString());
-                    xmlStr.append ( chars, 0, len ) ;
-               }
-               chars = null;
-               gzip.close();
-               zipReader.close();*/
-    }
     
     public void getResponseNodes(String msg_doc) throws ParserConfigurationException, SAXException, IOException{
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -310,11 +276,19 @@ public class ParseResponse {
         ByteArrayInputStream bis = new ByteArrayInputStream(decodedBytes);
         GZIPInputStream gzipStream = new GZIPInputStream(bis);    
         Reader decoder = new InputStreamReader(gzipStream, "UTF-8"); 
-                BufferedReader buffered = new BufferedReader(decoder);
-                String content;
-                while ((content = buffered.readLine()) != null)
-                    System.out.println(content);
-        
+        BufferedReader buffered = new BufferedReader(decoder);
+        //String content;
+        //while ((content = buffered.readLine()) != null)
+        //    System.out.println(content);
+        StringBuilder sb = new StringBuilder();
+        String line;
+	while((line = buffered.readLine()) != null) {
+            sb.append(line);
+	}
+	buffered.close();
+	gzipStream.close();
+	bis.close();
+	return sb.toString();
         /*GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(str.getBytes("ISO-8859-1")));
         BufferedReader bf = new BufferedReader(new InputStreamReader(gis, "ISO-8859-1"));
         String outStr = "";
@@ -322,8 +296,8 @@ public class ParseResponse {
         while ((line=bf.readLine())!=null) {
           outStr += line;
         }*/
-        MyLogging.log(Level.INFO,"Output String length : " + content.length());
-        return content;
+//        MyLogging.log(Level.INFO,"Output String length : " + content.length());
+        //return content;
     }
 
     public String getBrowserUrl() {
