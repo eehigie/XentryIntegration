@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.xentry.plexada;
+package com.plexada.xentry;
 
 import com.siebel.data.SiebelBusComp;
 import com.siebel.data.SiebelBusObject;
