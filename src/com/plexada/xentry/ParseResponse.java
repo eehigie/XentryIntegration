@@ -71,7 +71,11 @@ public class ParseResponse {
     private static String compressedData;
     private String responseCode ;
     private String BrowserUrl;
-    private String JobId;
+    private String JobId;   
+    private String ErrorId;
+    private String ErrorText;
+    private String TechnicalDetails;
+    private boolean ResponseMessageStatus;
 
     public ParseResponse(String str) throws ParserConfigurationException {
         handleResponse(str);
@@ -114,20 +118,40 @@ public class ParseResponse {
         Document doc = convertStringToDocument(str) ;
         doc.getDocumentElement().normalize();
 
-	System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
+	MyLogging.log(Level.INFO,"Root element :" + doc.getDocumentElement().getNodeName());
 			
-	NodeList nList = doc.getElementsByTagName("InitJobResponse");
-			
-	System.out.println("----------------------------");
-        for (int temp = 0; temp < nList.getLength(); temp++) {
-            Node nNode = (Node)nList.item(temp);
-            System.out.println("\nCurrent Element :" + nNode.getNodeName());				
-            if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-              Element eElement = (Element) nNode;
-              MyLogging.log(Level.INFO,"BrowserUrl : " + eElement.getAttribute("BrowserUrl"));
-              MyLogging.log(Level.INFO,"JobId : " + eElement.getAttribute("JobId"));  
-              this.BrowserUrl = eElement.getAttribute("BrowserUrl");
-              this.JobId = eElement.getAttribute("JobId");
+	NodeList nInitResponseList = doc.getElementsByTagName("InitJobResponse");
+        NodeList nServiceFaultList = doc.getElementsByTagName("ServiceFault");
+	
+        if(nInitResponseList.getLength()>0){
+            MyLogging.log(Level.INFO,"------Response is success getting values from InitJobResponse --------------------");
+            for (int temp = 0; temp < nInitResponseList.getLength(); temp++) {
+                Node nNode = (Node)nInitResponseList.item(temp);
+                MyLogging.log(Level.INFO,"\nCurrent Element :" + nNode.getNodeName());				
+                if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+                    Element eElement = (Element) nNode;
+                    MyLogging.log(Level.INFO,"BrowserUrl : " + eElement.getAttribute("BrowserUrl"));
+                    MyLogging.log(Level.INFO,"JobId : " + eElement.getAttribute("JobId"));  
+                    this.BrowserUrl = eElement.getAttribute("BrowserUrl");
+                    this.JobId = eElement.getAttribute("JobId");
+                    ResponseMessageStatus = true;
+                }
+            }
+        }else if(nServiceFaultList.getLength()>0){
+            MyLogging.log(Level.INFO,"------Response is failure getting values from ServiceFault --------------------");
+            for (int temp = 0; temp < nServiceFaultList.getLength(); temp++) {
+                Node nNode = (Node)nServiceFaultList.item(temp);
+                MyLogging.log(Level.INFO,"\nCurrent Element :" + nNode.getNodeName());				
+                if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+                    Element eElement = (Element) nNode;                
+                    MyLogging.log(Level.INFO,"ErrorId : " + eElement.getElementsByTagName("ErrorId").item(0).getTextContent());
+                    MyLogging.log(Level.INFO,"ErrorText : " + eElement.getElementsByTagName("ErrorText").item(0).getTextContent());
+                    MyLogging.log(Level.INFO,"TechnicalDetails : " + eElement.getElementsByTagName("TechnicalDetails").item(0).getTextContent());
+                    this.ErrorId = eElement.getElementsByTagName("ErrorId").item(0).getTextContent();
+                    this.ErrorText = eElement.getElementsByTagName("ErrorText").item(0).getTextContent();
+                    this.TechnicalDetails = eElement.getElementsByTagName("TechnicalDetails").item(0).getTextContent();
+                    ResponseMessageStatus = false;
+                }
             }
         }
 
@@ -203,7 +227,7 @@ public class ParseResponse {
 	MyLogging.log(Level.INFO,"Root element :" + the_raw_xml_doc.getDocumentElement().getNodeName());
 			
 	//NodeList nList = the_raw_xml_doc.getElementsByTagName("data");   
-        //System.out.println("----------------------------");
+        //MyLogging.log(Level.INFO,"----------------------------");
         //for (int temp = 0; temp < nList.getLength(); temp++) {
         //    Node nNode = (Node)nList.item(temp);				
         //    MyLogging.log(Level.INFO,"\nCurrent Element :" + nNode.getNodeName());
@@ -265,6 +289,9 @@ public class ParseResponse {
         return compressedData;
     }
     
+    public void checkResponseStatus(){
+        
+    }
     
     public String decompress(String str) throws Exception {
         if (str == null || str.length() == 0) {
@@ -277,9 +304,6 @@ public class ParseResponse {
         GZIPInputStream gzipStream = new GZIPInputStream(bis);    
         Reader decoder = new InputStreamReader(gzipStream, "UTF-8"); 
         BufferedReader buffered = new BufferedReader(decoder);
-        //String content;
-        //while ((content = buffered.readLine()) != null)
-        //    System.out.println(content);
         StringBuilder sb = new StringBuilder();
         String line;
 	while((line = buffered.readLine()) != null) {
@@ -288,16 +312,8 @@ public class ParseResponse {
 	buffered.close();
 	gzipStream.close();
 	bis.close();
-	return sb.toString();
-        /*GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(str.getBytes("ISO-8859-1")));
-        BufferedReader bf = new BufferedReader(new InputStreamReader(gis, "ISO-8859-1"));
-        String outStr = "";
-        String line;
-        while ((line=bf.readLine())!=null) {
-          outStr += line;
-        }*/
-//        MyLogging.log(Level.INFO,"Output String length : " + content.length());
-        //return content;
+        MyLogging.log(Level.INFO,"Decompressed Data::"+sb.toString());
+	return sb.toString();        
     }
 
     public String getBrowserUrl() {
@@ -311,6 +327,22 @@ public class ParseResponse {
     public String getResponseCode() {
         return responseCode;
     }
+
+    public String getErrorId() {
+        return ErrorId;
+    }
+
+    public String getErrorText() {
+        return ErrorText;
+    }
+
+    public boolean isResponseMessageStatus() {
+        return ResponseMessageStatus;
+    }
+
+    public String getTechnicalDetails() {
+        return TechnicalDetails;
+    }
     
     
     
@@ -322,6 +354,7 @@ public class ParseResponse {
             //SOAPMessage response = MessageFactory.newInstance().createMessage(null, is);
             SOAPMessage sm = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL).createMessage(new MimeHeaders(), is);
             ParseResponse pr = new ParseResponse(sm);
+            pr.handleResponse(TestString.rem);
             //pr.decompress(compressedData);
             //pr.getResponseNodes(TestString.initSuccessResp) ;
             //MyLogging.log(Level.INFO,"msg::"+pr.printSoapMessage(sm));

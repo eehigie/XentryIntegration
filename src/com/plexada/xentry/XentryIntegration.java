@@ -8,6 +8,7 @@ package com.plexada.xentry;
 import com.siebel.data.SiebelDataBean;
 import com.siebel.data.SiebelException;
 import com.siebel.data.SiebelPropertySet;
+import com.siebel.eai.SiebelBusinessService;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,13 +29,16 @@ import javax.xml.soap.SOAPConnectionFactory;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import org.xml.sax.SAXException;
 
 /**
  *
  * @author efosa
  */
-public class XentryIntegration {
+public class XentryIntegration extends SiebelBusinessService{
     private Map XentryInitJobCustomerConcernMap;
     private Map PlxXentryInitJobServiceMeasureMap;
     private Map PlxXentryOrderMap = new HashMap();
@@ -46,27 +50,9 @@ public class XentryIntegration {
     private SiebelPropertySet psVehicle;
     private SiebelDataBean sdb;
     private String browserURL;
-    private String jobId;
-    /*private Map XentryCustomerConcernMap;
-    private Map PlxCustomerConcernNotesMap;
-    private Map PlxCustomerConcernDefectKeyMap;
-    private Map PlxCustomerConcernPartsMap;
-    private Map PlxCustomerConcernWorkItemMap;
-    private Map PlxCustomerConcernServicePackageMap;
+    private String jobId;   
+    private static final StringWriter ERRORS = new StringWriter();    
     
-    
-    private Map PlxServiceMeasureNotesAndDefectKeyMap;
-    private Map PlxServiceMeasurePartsMap;
-    private Map PlxServiceMeasureWorkItem;
-    private Map PlxServiceMeasurePackageMap;*/
-    private static final StringWriter ERRORS = new StringWriter();
-    //private final Map EMPTY_MAP = new HashMap();
-    
-    public static String decompress(byte[] bytes) throws Exception {
-    
-        GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(bytes));
-        return gis.toString();
-    }
     
     private String getCurrentTimeStamp() {
         SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -74,6 +60,8 @@ public class XentryIntegration {
         String strDate = sdfDate.format(now);
         return strDate;
     }
+    
+    @Override
     public void doInvokeMethod(String methodName, SiebelPropertySet input, SiebelPropertySet output) {
         
         if(methodName.equalsIgnoreCase("InitJob")){            
@@ -95,12 +83,14 @@ public class XentryIntegration {
             PlxXentryVehicleMap = xv.getXentryVehiclerMap();
             
             MyLogging.log(Level.INFO, "building request initjob xml ..... ");
-            String siebel_login_name = input.getProperty("SiebelLoginName");
-            String initjob_currency = input.getProperty("Currency");            
-            String tracking_id = input.getProperty("TrackingId");
-            String xentry_user = input.getProperty("XentryUser");
-            String xentry_userpwd = input.getProperty("XentryUserPwd");
-            String xentry_url_endpoint = input.getProperty("XentryURLEndpoint");
+            SiebelPropertySet tmpPs = input.getChild(0);
+            SiebelPropertySet initParamPs = tmpPs.getChild(0);
+            String siebel_login_name = initParamPs.getProperty("SiebelLoginName");
+            String initjob_currency = initParamPs.getProperty("Currency");            
+            String tracking_id = initParamPs.getProperty("TrackingId");
+            String xentry_user = initParamPs.getProperty("XentryUser");
+            String xentry_userpwd = initParamPs.getProperty("XentryUserPwd");
+            String xentry_url_endpoint = initParamPs.getProperty("XentryURLEndpoint");
             String initjob_timestamp = getCurrentTimeStamp();
             
             
@@ -129,9 +119,11 @@ public class XentryIntegration {
                 SOAPElement vehicleElement = initJob.putVehicle(jobElement, PlxXentryVehicleMap);
                 SOAPElement customerElement = initJob.putCustomer(jobElement, PlxXentryCustomerMap);
                                 
-                MyLogging.log(Level.INFO, "OUTPUT REQUEST XML ......................");                
+                MyLogging.log(Level.INFO, "OUTPUT REQUEST XML ......................"); 
+                final StringWriter sw = new StringWriter();
+                TransformerFactory.newInstance().newTransformer().transform(new DOMSource(soap_message.getSOAPPart()),new StreamResult(sw));
                 soap_message.writeTo(System.out);
-              
+                MyLogging.log(Level.INFO, sw.toString()); 
             
                 SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
                 SOAPConnection connection = soapConnectionFactory.createConnection();
@@ -147,13 +139,24 @@ public class XentryIntegration {
                 sdb = ApplicationsConnection.connectSiebelServer();
                 SiebelService ssr = new SiebelService(sdb,responseCode);
                 if(ssr.isResponseStatus()){
+                    MyLogging.log(Level.INFO,"Webservice call completed.....");
+                    MyLogging.log(Level.INFO,"Check response.....");
                     response_msg.handleResponse(decompressedData);
-                    browserURL = response_msg.getBrowserUrl();
-                    jobId = response_msg.getJobId();
-                    output.setProperty("Response_Status", "Success");
-                    output.setProperty("BrowserURL", browserURL);
-                    output.setProperty("JobId", jobId);
+                    if(response_msg.isResponseMessageStatus()){
+                        MyLogging.log(Level.INFO,"InitJob Response Message Success.....");
+                        browserURL = response_msg.getBrowserUrl();
+                        jobId = response_msg.getJobId();
+                        output.setProperty("Response_Status", "Success");
+                        output.setProperty("BrowserURL", browserURL);
+                        output.setProperty("JobId", jobId);
+                    }else{
+                        MyLogging.log(Level.INFO,"InitJob Response Message Failed.....");
+                        output.setProperty("Response_Status", "Error");
+                        output.setProperty("ErrorCode", response_msg.getErrorId());
+                        output.setProperty("ErrorMessage", response_msg.getErrorText()+"::::::"+response_msg.getTechnicalDetails());
+                    }
                 }else{
+                    MyLogging.log(Level.INFO,"InitJob Failed.....");
                     output.setProperty("Response_Status", "Error");
                     output.setProperty("ErrorCode", responseCode);
                     output.setProperty("ErrorMessage", ssr.getResponseCodeDescription());
@@ -312,14 +315,24 @@ public class XentryIntegration {
     
     private void assignPropertySetsFromInpusPS(SiebelPropertySet sps){
         int psChild = sps.getChildCount();
-        for(int i = 0; i < psChild; ++i){
-          SiebelPropertySet tmpPs =  sps.getChild(i);
+        MyLogging.log(Level.SEVERE, "assignPropertySetsFromInpusPS Method.....Child Count:"+ psChild);        
+        SiebelPropertySet grandChildPS = sps.getChild(0);
+        MyLogging.log(Level.SEVERE, "assignPropertySetsFromInpusPS Method.....GrandChild Count:"+ grandChildPS.getChildCount());
+        int psGrandChild = grandChildPS.getChildCount();
+        SiebelPropertySet greatGrandChildPS = grandChildPS.getChild(0);
+        MyLogging.log(Level.SEVERE, "assignPropertySetsFromInpusPS Method.....GreatGrandChild Count:"+ greatGrandChildPS.getChildCount());
+        int psGreatGrandChild = greatGrandChildPS.getChildCount();
+        for(int i = 0; i < psGreatGrandChild; ++i){
+          SiebelPropertySet tmpPs =  greatGrandChildPS.getChild(i);
           if(tmpPs.getType().equalsIgnoreCase("Order")){
-              psOrder = sps.getChild(i);
+              psOrder = greatGrandChildPS.getChild(i);
+              MyLogging.log(Level.SEVERE, "Order retreived");
           }else if(tmpPs.getType().equalsIgnoreCase("Vehicle")){
-              psVehicle = sps.getChild(i);
+              psVehicle = greatGrandChildPS.getChild(i);
+              MyLogging.log(Level.SEVERE, "Vehicle retreived");
           }else if(tmpPs.getType().equalsIgnoreCase("Customer")){
-              psCustomer = sps.getChild(i);
+              psCustomer = greatGrandChildPS.getChild(i);
+              MyLogging.log(Level.SEVERE, "Customer retreived");
           }
         }
     }
@@ -327,23 +340,30 @@ public class XentryIntegration {
     public static void main(String[] args) {
         SiebelPropertySet spsInput = new SiebelPropertySet();
         SiebelPropertySet spsOutput = new SiebelPropertySet();
-        spsInput.setProperty("methodName", "InitJob");
-        spsInput.setProperty("SiebelLoginName", "EEHIGIE");
-        spsInput.setProperty("XentryUser", "TD02136");
-        spsInput.setProperty("XentryUserPwd", "9Lh8hdyDtY");
-        spsInput.setProperty("CustomerConcernXML", new TestString().xc2);
-        spsInput.setProperty("ServiceMeasureXML", new TestString().xd);
-        spsInput.setProperty("Currency","EUR");
-        spsInput.setProperty("TrackingId","TJ24_1.1");
-        spsInput.setProperty("XentryURLEndpoint","https://srs-ds-int1.i.daimler.com/STARCDS/services/ExternalInterface");
+        SiebelPropertySet tempPS = new SiebelPropertySet();
+        SiebelPropertySet tempPS2 = new SiebelPropertySet();
+        tempPS.setProperty("methodName", "InitJob");
+        tempPS.setProperty("SiebelLoginName", "EEHIGIE");
+        tempPS.setProperty("XentryUser", "TD02136");
+        tempPS.setProperty("XentryUserPwd", "9Lh8hdyDtY");
+        tempPS.setProperty("CustomerConcernXML", new TestString().xc2);
+        tempPS.setProperty("ServiceMeasureXML", new TestString().xd);
+        tempPS.setProperty("Currency","EUR");
+        tempPS.setProperty("TrackingId","TJ24_1.1");
+        tempPS.setProperty("XentryURLEndpoint","https://srs-ds-int1.i.daimler.com/STARCDS/services/ExternalInterface");
         
         SiebelPropertySet psI = new SiebelPropertySet();
         SiebelPropertySet psOrder = new SiebelPropertySet();
         psOrder.setType("Order");
+        /*psOrder.setProperty("OrderId", "");
+        psOrder.setProperty("PaymentMethod", "optional payment");
+        psOrder.setProperty("ReceptionDateTime", "");
+        psOrder.setProperty("ReturnDateTime", "");*/
         psOrder.setProperty("OrderId", "1234");
         psOrder.setProperty("PaymentMethod", "optional payment");
         psOrder.setProperty("ReceptionDateTime", "2016-05-01T12:00:00");
         psOrder.setProperty("ReturnDateTime", "2016-05-02T12:00:00");
+        
         
         SiebelPropertySet psOrderServiceAdvisor = new SiebelPropertySet();
         psOrderServiceAdvisor.setProperty("FirstName", "Max");
@@ -376,11 +396,11 @@ public class XentryIntegration {
         psCustomer.setProperty("IdSource", "central system");
         psCustomer.setProperty("UCID", "1234567890123456789");
         
-        spsInput.addChild(psOrder);
-        spsInput.addChild(psVehicle);
-        spsInput.addChild(psCustomer);
-                
-        
+        tempPS.addChild(psOrder);
+        tempPS.addChild(psVehicle);
+        tempPS.addChild(psCustomer);
+        tempPS2.addChild(tempPS); 
+        spsInput.addChild(tempPS2);
         
         new XentryIntegration().doInvokeMethod("InitJob", spsInput, spsOutput);
         

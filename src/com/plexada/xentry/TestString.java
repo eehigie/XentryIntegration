@@ -593,5 +593,61 @@ public static final String initSuccessResp = "<soapenv:Envelope xmlns:soapenv=\"
 "      <InitJobResponse BrowserUrl=\"https://xentry-int4.i.daimler.com/wps/mypoc?uri=erepko:openJob=53250\" JobId=\"53250\" />\n" +
 "   </ServiceMessage>\n" +
 "</Message:Message>";
+
+public static final String rem = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+"<Message:Message xmlns:Message=\"http://dms.ri.as.daimler.com/DMSService\" xmlns=\"http://dms.ri.as.daimler.com/DMSService\" xmlns:ns1=\"http://stc.daimler.com/2009/08/DS\" xmlns:ns2=\"http://dms.ri.as.daimler.com/DMSService/types\" xmlns:ns3=\"http://dms.ri.as.daimler.com/DMSService/dms_sending\" xmlns:ns4=\"http://dms.ri.as.daimler.com/DMSService/xp_sending\" xmlns:soapenv=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:stcds=\"http://stc.daimler.com/2009/08/DS\" xmlns:stcdsext=\"http://stc.daimler.com/2009/08/DS/ext\">\n" +
+"   <BusinessContext>\n" +
+"      <DmsType>UNKNOWN</DmsType>\n" +
+"      <DmsVersion>UNKNOWN</DmsVersion>\n" +
+"      <ServiceVersion>2.4</ServiceVersion>\n" +
+"      <Type>FAULT</Type>\n" +
+"   </BusinessContext>\n" +
+"   <UserContext>\n" +
+"      <DaimlerUserId>RETACC_STARCDS_XENTRY_INT4_00000</DaimlerUserId>\n" +
+"      <UserLocale>en</UserLocale>\n" +
+"   </UserContext>\n" +
+"   <ProcessContext>\n" +
+"      <Timestamp>2018-12-18T15:38:47.006+01:00</Timestamp>\n" +
+"      <TrackingId>UNKNOWN</TrackingId>\n" +
+"   </ProcessContext>\n" +
+"   <ServiceMessage>\n" +
+"      <ServiceFault>\n" +
+"         <Timestamp>2018-12-18T15:38:47.006+01:00</Timestamp>\n" +
+"         <ErrorId>1801</ErrorId>\n" +
+"         <ErrorText>The transferred data is not correct.</ErrorText>\n" +
+"         <TechnicalDetails>JAXB error while parsing DMS message [cvc-datatype-valid.1.2.1: '' is not a valid value for 'dateTime'.]</TechnicalDetails>\n" +
+"         <CorrelatingRequest>\n" +
+"            <env:Message xmlns:env=\"http://dms.ri.as.daimler.com/DMSService\" xmlns:cur=\"http://dms.ri.as.daimler.com/DMSService/currencies\" xmlns:dms=\"http://dms.ri.as.daimler.com/DMSService/dms_sending\" xmlns:ds=\"http://stc.daimler.com/2009/08/DS\" xmlns:ext=\"http://stc.daimler.com/2009/08/DS/ext\" xmlns:ns2=\"http://stc.daimler.com/2009/08/DS/int/backend\" xmlns:ns3=\"http://stc.daimler.com/2009/08/DS\" xmlns:ns4=\"http://stc.daimler.com/2009/08/DS/int\" xmlns:types=\"http://dms.ri.as.daimler.com/DMSService/types\" xmlns:xp=\"http://dms.ri.as.daimler.com/DMSService/xp_sending\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://dms.ri.as.daimler.com/DMSService IF_XP_DMS_2_4_message_envelope.xsd http://dms.ri.as.daimler.com/DMSService/dms_sending IF_XP_DMS_2_4_dms_sending.xsd http://dms.ri.as.daimler.com/DMSService/types IF_XP_DMS_2_4_types.xsd http://dms.ri.as.daimler.com/DMSService/currencies IF_XP_DMS_2_4_currencies.xsd http://dms.ri.as.daimler.com/DMSService/xp_sending IF_XP_DMS_2_4_xp_sending.xsd http://ws.eskulabdec.daimler.com/ IF_XP_DMS_2_4_eskulab_decision.xsd\">\n" +
+"               <env:BusinessContext>\n" +
+"                  <env:DmsType>WestStar DMS(Siebel)</env:DmsType>\n" +
+"                  <env:DmsVersion>IP2016</env:DmsVersion>\n" +
+"                  <env:ServiceVersion>2.4</env:ServiceVersion>\n" +
+"                  <env:Type>REQUEST</env:Type>\n" +
+"               </env:BusinessContext>\n" +
+"               <env:UserContext>\n" +
+"                  <env:DaimlerUserId>P0012CO</env:DaimlerUserId>\n" +
+"                  <env:DmsUserId>EEHIGIE</env:DmsUserId>\n" +
+"                  <env:UserLocale>en_NG</env:UserLocale>\n" +
+"               </env:UserContext>\n" +
+"               <env:ProcessContext>\n" +
+"                  <env:Timestamp>2018-12-18T15:38:44</env:Timestamp>\n" +
+"                  <env:TrackingId>1-5TC5</env:TrackingId>\n" +
+"               </env:ProcessContext>\n" +
+"               <env:ServiceMessage>\n" +
+"                  <env:InitJobRequest>\n" +
+"                     <dms:Job Currency=\"NGN\">\n" +
+"                        <dms:Order OrderId=\"\" PaymentMethod=\"\" ReceptionDateTime=\"\" ReturnDateTime=\"\">\n" +
+"                           <types:ServiceAdvisor Abbreviation=\"\" FirstName=\"Max\" LastName=\"Max\" />\n" +
+"                        </dms:Order>\n" +
+"                        <dms:Vehicle FinOrVin=\"121221\" FirstRegistrationDate=\"\" OdometerReading=\"\" OdometerUnit=\"\" OperatingHours=\"\" RegistrationNumber=\"\" />\n" +
+"                        <dms:Customer CallbackFlag=\"\" EmailAddress=\"\" FirstName=\"John\" IdSource=\"\" LastName=\"John\" Number=\"WST-1-237001\" PhoneNumber=\"\" Preferences=\"\" Salutation=\"Mr.\" Title=\"\" UCID=\"\" WaitingFlag=\"\" />\n" +
+"                     </dms:Job>\n" +
+"                  </env:InitJobRequest>\n" +
+"               </env:ServiceMessage>\n" +
+"            </env:Message>\n" +
+"         </CorrelatingRequest>\n" +
+"      </ServiceFault>\n" +
+"   </ServiceMessage>\n" +
+"</Message:Message>"; 
  
 }
