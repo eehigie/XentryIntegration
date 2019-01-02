@@ -16,14 +16,10 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.namespace.QName;
@@ -60,8 +56,7 @@ import org.w3c.dom.Element;
  */
 public class ParseResponse {
 
-    private static final StringWriter ERRORS = new StringWriter();
-   
+    private static final StringWriter ERRORS = new StringWriter();   
     private SOAPMessage soap_response = null;
     private SOAPPart response_soapPart = null;
     private SOAPEnvelope response_envelope = null;
@@ -76,45 +71,37 @@ public class ParseResponse {
     private String ErrorText;
     private String TechnicalDetails;
     private boolean ResponseMessageStatus;
-
+    private String eventValue;
+    private String requestID;
+    private String responseTypeValue;
+    private String responseOperationValue;
+    private String dataID;
+    
+    
     public ParseResponse(String str) throws ParserConfigurationException {
         handleResponse(str);
     }
-            
+    
+    public ParseResponse(String str, String resp_type) throws ParserConfigurationException {
+        handleResponse(str,resp_type);
+    }
     
     public ParseResponse(SOAPMessage soap_response ) throws SOAPException, IOException, ParserConfigurationException, UnsupportedEncodingException, SAXException {
         //String format1 = "ISO-8859-1";
         this.soap_response = soap_response;
         this.response_soapPart = this.soap_response.getSOAPPart();
         this.response_envelope = this.response_soapPart.getEnvelope();
-        this.response_soapBody = this.response_envelope.getBody();
+        ParseResponse.response_soapBody = this.response_envelope.getBody();
         
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         soap_response.writeTo(out);
         raw_xml = new String(out.toByteArray());
         handleXMLDoc();             
-        getResponseNodes();
+        List responseNodes = getResponseNodes();
     }
     
-    
-    public SOAPPart getResponseSoapPart(){
-        
-        return this.response_soapPart;
-    }
-    
-    public SOAPEnvelope getResponseSoapEnvelope(){
-         
-         return this.response_envelope;
-    }
-    
-    public SOAPBody getResponseSoapBody(){
-        
-        return this.response_soapBody;
-    }
-    
-    public void handleResponse(String str) throws ParserConfigurationException{
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-	DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+    public final void handleResponse(String str) throws ParserConfigurationException{
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();	
         Document doc = convertStringToDocument(str) ;
         doc.getDocumentElement().normalize();
 
@@ -157,6 +144,32 @@ public class ParseResponse {
 
     }
     
+    public final void handleResponse(String str, String resp_type) throws ParserConfigurationException{
+        if(resp_type.equalsIgnoreCase("dms_notification")){
+            handleDMSNotification(str);
+        }
+
+    }
+    
+    private void handleDMSNotification(String str) throws ParserConfigurationException {        	
+        Document doc = convertStringToDocument(str) ;
+        doc.getDocumentElement().normalize();
+
+	MyLogging.log(Level.INFO,"Root element :" + doc.getDocumentElement().getNodeName());
+	
+        MyLogging.log(Level.INFO,"event : " +doc.getDocumentElement().getElementsByTagName("event").item(0).getTextContent());
+        eventValue = doc.getDocumentElement().getElementsByTagName("event").item(0).getTextContent();
+        MyLogging.log(Level.INFO,"event : " + doc.getDocumentElement().getElementsByTagName("event").item(0).getTextContent());
+        requestID =  doc.getDocumentElement().getElementsByTagName("requestID").item(0).getTextContent();
+        MyLogging.log(Level.INFO,"requestID : " + doc.getDocumentElement().getElementsByTagName("requestID").item(0).getTextContent());
+        responseTypeValue =  doc.getDocumentElement().getElementsByTagName("type").item(0).getTextContent();
+        MyLogging.log(Level.INFO,"type : " + doc.getDocumentElement().getElementsByTagName("type").item(0).getTextContent());
+        responseOperationValue = doc.getDocumentElement().getElementsByTagName("operation").item(0).getTextContent();
+        MyLogging.log(Level.INFO,"operation : " + doc.getDocumentElement().getElementsByTagName("operation").item(0).getTextContent());
+        dataID = doc.getDocumentElement().getElementsByTagName("dataID").item(0).getTextContent();
+        MyLogging.log(Level.INFO,"dataID : " + doc.getDocumentElement().getElementsByTagName("dataID").item(0).getTextContent());                
+    }
+    
     private static Document convertStringToDocument(String xmlStr) {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();  
         DocumentBuilder builder;  
@@ -165,9 +178,16 @@ public class ParseResponse {
             builder = factory.newDocumentBuilder();  
             Document doc = builder.parse( new InputSource( new StringReader( xmlStr ) ) ); 
             return doc;
-        } catch (Exception e) {  
-            e.printStackTrace();  
-        } 
+        } catch (ParserConfigurationException ex) {  
+            ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+            MyLogging.log(Level.SEVERE, "convertStringToDocument....."+ ERRORS.toString());
+        } catch (SAXException ex) { 
+            ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+            MyLogging.log(Level.SEVERE, "convertStringToDocument....."+ ERRORS.toString());
+        } catch (IOException ex) {
+            ex.printStackTrace(new PrintWriter(ERRORS));                                                            
+            MyLogging.log(Level.SEVERE, "convertStringToDocument....."+ ERRORS.toString());
+        }
         return null;
     }
     
@@ -182,7 +202,7 @@ public class ParseResponse {
     }
     
        
-    public List getResponseNodes(){
+    public final List getResponseNodes(){
        List<String> nodeList = new ArrayList<String>();
        Iterator<Node> itr= response_soapBody.getChildElements();
        Element ele;
@@ -200,10 +220,10 @@ public class ParseResponse {
                  Element elChld = (Element) statusNodeList.item(i);                 
                  MyLogging.log(Level.INFO,"child : "+elChld.getLocalName()+" Value:"+elChld.getTextContent());
                  if(elChld.getLocalName().equalsIgnoreCase("data")){
-                    this.compressedData =  elChld.getTextContent();
-                    this.compressedData = compressedData.replaceAll("\\s","");
-                    this.compressedData = compressedData.replaceAll("\\n", "");
-                    this.compressedData = compressedData.replaceAll("\\r", "");
+                    ParseResponse.compressedData =  elChld.getTextContent();
+                    ParseResponse.compressedData = compressedData.replaceAll("\\s","");
+                    ParseResponse.compressedData = compressedData.replaceAll("\\n", "");
+                    ParseResponse.compressedData = compressedData.replaceAll("\\r", "");
                     MyLogging.log(Level.INFO,"compressedData : "+compressedData);
                  }else if(elChld.getLocalName().equalsIgnoreCase("responseCode")){
                     this.responseCode = elChld.getTextContent();
@@ -223,16 +243,8 @@ public class ParseResponse {
         DocumentBuilder builder = factory.newDocumentBuilder();                      
         Document the_raw_xml_doc = builder.parse(msg_doc);
         the_raw_xml_doc.getDocumentElement().normalize();
-
 	MyLogging.log(Level.INFO,"Root element :" + the_raw_xml_doc.getDocumentElement().getNodeName());
-			
-	//NodeList nList = the_raw_xml_doc.getElementsByTagName("data");   
-        //MyLogging.log(Level.INFO,"----------------------------");
-        //for (int temp = 0; temp < nList.getLength(); temp++) {
-        //    Node nNode = (Node)nList.item(temp);				
-        //    MyLogging.log(Level.INFO,"\nCurrent Element :" + nNode.getNodeName());
-        //}
-        
+	
     }
     
     private void handleXMLDoc() throws ParserConfigurationException, UnsupportedEncodingException, SAXException, IOException{
@@ -266,9 +278,7 @@ public class ParseResponse {
     }
     
     
-    public static String printSoapMessage(final SOAPMessage soapMessage) throws TransformerFactoryConfigurationError,
-            TransformerConfigurationException, SOAPException, TransformerException
-    {
+    public static String printSoapMessage(final SOAPMessage soapMessage) throws TransformerFactoryConfigurationError,TransformerConfigurationException, SOAPException, TransformerException{
         final TransformerFactory transformerFactory = TransformerFactory.newInstance();
         final Transformer transformer = transformerFactory.newTransformer();
 
@@ -288,16 +298,12 @@ public class ParseResponse {
     public String getCompressedData() {
         return compressedData;
     }
-    
-    public void checkResponseStatus(){
-        
-    }
+  
     
     public String decompress(String str) throws Exception {
         if (str == null || str.length() == 0) {
             return str;
-        }
-        
+        }        
         //byte[] decodedBytes = Base64.decodeBase64(str);
         byte[] decodedBytes = DatatypeConverter.parseBase64Binary(str);
         ByteArrayInputStream bis = new ByteArrayInputStream(decodedBytes);
@@ -315,7 +321,24 @@ public class ParseResponse {
         MyLogging.log(Level.INFO,"Decompressed Data::"+sb.toString());
 	return sb.toString();        
     }
-
+    
+    
+    public SOAPPart getResponseSoapPart(){
+        
+        return this.response_soapPart;
+    }
+    
+    public SOAPEnvelope getResponseSoapEnvelope(){
+         
+         return this.response_envelope;
+    }
+    
+    public SOAPBody getResponseSoapBody(){
+        
+        return ParseResponse.response_soapBody;
+    }
+    
+    
     public String getBrowserUrl() {
         return BrowserUrl;
     }
@@ -343,6 +366,26 @@ public class ParseResponse {
     public String getTechnicalDetails() {
         return TechnicalDetails;
     }
+
+    public String getEventValue() {
+        return eventValue;
+    }
+
+    public String getRequestID() {
+        return requestID;
+    }
+
+    public String getResponseTypeValue() {
+        return responseTypeValue;
+    }
+
+    public String getResponseOperationValue() {
+        return responseOperationValue;
+    }
+
+    public String getDataID() {
+        return dataID;
+    }
     
     
     
@@ -353,8 +396,10 @@ public class ParseResponse {
             InputStream is = new ByteArrayInputStream(TestString.initSuccessResp.getBytes());
             //SOAPMessage response = MessageFactory.newInstance().createMessage(null, is);
             SOAPMessage sm = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL).createMessage(new MimeHeaders(), is);
-            ParseResponse pr = new ParseResponse(sm);
-            pr.handleResponse(TestString.rem);
+            ParseResponse pr = new ParseResponse(TestString.dms_notf,"dms_notification");            
+            
+            //ParseResponse pr = new ParseResponse(sm);
+            //pr.handleResponse(TestString.rem);
             //pr.decompress(compressedData);
             //pr.getResponseNodes(TestString.initSuccessResp) ;
             //MyLogging.log(Level.INFO,"msg::"+pr.printSoapMessage(sm));
@@ -364,7 +409,7 @@ public class ParseResponse {
             
             //MyLogging.log(Level.INFO,"data :: "+compressedData);
             //pr.getMsgNodes();
-            pr.isResponseSuccess();
+            //pr.isResponseSuccess();
             //pr.getResponseNodes();
             //List ls = pr.getResponseNodes();
             //MyLogging.log(Level.INFO,"D::"+raw_xml);

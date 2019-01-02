@@ -650,4 +650,11 @@ public static final String rem = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" 
 "   </ServiceMessage>\n" +
 "</Message:Message>"; 
  
+public static final String dms_notf = "<message xmlns=\"http://stc.daimler.com/2009/08/DS/Sync\" xmlns:ns2=\"http://stc.daimler.com/2009/08/DS\">\n" +
+"  <event>NOTIFICATION_REQUEST</event>\n" +
+"  <requestID>100368837</requestID>\n" +
+"  <type>SERVICE_JOB_7</type>\n" +
+"  <operation>TransferJobToDms</operation>\n" +
+"  <dataID>101224509</dataID>\n" +
+"</message>";
 }
