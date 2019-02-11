@@ -48,11 +48,11 @@ public class MyLogging {
     if ((OS.contains("nix")) || (OS.contains("nux"))){
       this.prop_file_path = "/usr/app/siebel/intg/intg.properties";
       this.propfilepath = this.prop_file_path;
-      this.vlogFile = "nix_logfile";      
+      this.vlogFile = "xentry_nix_logfile";      
     }
     else if (OS.contains("win")){
       this.propfilepath = "C:\\temp\\intg\\intg.properties";
-      this.vlogFile = "win_logfile";      
+      this.vlogFile = "xentry_win_logfile";      
     }
     getProperties();
     Date date = new Date();
