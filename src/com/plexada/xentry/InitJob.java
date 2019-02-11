@@ -6,11 +6,9 @@
 package com.plexada.xentry;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.URL;
+import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -19,17 +17,12 @@ import javax.xml.namespace.QName;
 import javax.xml.soap.MessageFactory;
 import javax.xml.soap.SOAPBody;
 import javax.xml.soap.SOAPBodyElement;
-import javax.xml.soap.SOAPConnection;
-import javax.xml.soap.SOAPConnectionFactory;
 import javax.xml.soap.SOAPConstants;
 import javax.xml.soap.SOAPElement;
-//import javax.xml.soap.SOAPEnvelope;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPHeader;
 import javax.xml.soap.SOAPHeaderElement;
 import javax.xml.soap.SOAPMessage;
-//import javax.xml.soap.SOAPPart;
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -79,8 +72,11 @@ public class InitJob {
         Iterator iter = elementAttributes.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry mEntry = (Map.Entry) iter.next();            
-            QName q_name = new QName(String.valueOf(mEntry.getKey()));            
-            dataElement.addAttribute(q_name, String.valueOf(mEntry.getValue()));            
+            QName q_name = new QName(String.valueOf(mEntry.getKey())); 
+            if(!(String.valueOf(mEntry.getValue()).isEmpty())){
+              dataElement.addAttribute(q_name, String.valueOf(mEntry.getValue()));   
+            }
+                       
 	}
     }
     
@@ -162,6 +158,9 @@ public class InitJob {
     }
     return textValue.toString().trim();
   }
+    
+    
+    
     /**
      * @param args the command line arguments
      * @return 
@@ -661,7 +660,7 @@ public class InitJob {
                 SOAPElement jobElement = initJob.putJob(initJobRequestElement, "EUR");
                 SOAPElement customerConcernElement = initJob.putCustomerConcern(jobElement,XentryInitJobCustomerConcernMap);
                 SOAPElement serviceMeasureElement = initJob.putServiceMeasure(jobElement, XentryInitJobserviceMeasureMap);
-        soap_message.writeTo(System.out);
+        soap_message.writeTo(System.out);        
         /*Map customerConcernMap = new HashMap();
         customerConcernMap.put("Classification","Unclassified");
         customerConcernMap.put("Title","Unclassified");

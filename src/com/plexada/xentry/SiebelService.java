@@ -32,6 +32,10 @@ public class SiebelService {
         getCodeGroup(code);        
     }
     
+    public SiebelService(SiebelDataBean sdb) throws SiebelException {
+        sieb_data_bean = sdb;
+    }
+    
     private static void getCodeGroup(String code) throws SiebelException{
         SiebelBusObject boObj = sieb_data_bean.getBusObject("eAuto Fault Trouble");
         SiebelBusComp bcObj = boObj.getBusComp("eAuto Fault Code");        
@@ -52,7 +56,31 @@ public class SiebelService {
             }
         }                
     }
-
+    
+    public boolean updateServiceOrderRecordWithXentryData(String orderId, String xentryJobId, String xentryJobURL) throws SiebelException{
+        MyLogging.log(Level.INFO,"In updateServiceOrderRecordWithXentryData.......");
+        SiebelBusObject boObj = sieb_data_bean.getBusObject("Order Entry");
+        SiebelBusComp bcObj = boObj.getBusComp("PLX Service Order Entry - Orders");        
+        bcObj.activateField("Xentry Job Id");
+        bcObj.activateField("Xentry Flag");
+        bcObj.activateField("Xentry URL");
+        bcObj.setViewMode(3);
+        bcObj.clearToQuery();
+        bcObj.setSearchSpec("Id", orderId);
+        bcObj.executeQuery2(true, true);						
+	if(bcObj.firstRecord()){
+            MyLogging.log(Level.INFO,"In record:");            
+            bcObj.setFieldValue("Xentry Job Id", xentryJobId);
+            bcObj.setFieldValue("Xentry Flag", "N");
+            bcObj.setFieldValue("Xentry URL", xentryJobURL);
+            bcObj.writeRecord();
+            return true;
+        }else{
+            return false;
+        }
+        
+    }
+    
     public String getResponseCodeDescription() {
         return responseCodeDescription;
     }
@@ -64,7 +92,7 @@ public class SiebelService {
     public boolean isResponseStatus() {
         return responseStatus;
     }
-    
+            
     public static void main(String[] args) {
         try {
             SiebelService ss = new SiebelService(ApplicationsConnection.connectSiebelServer(),"STARCDS001002");

@@ -15,6 +15,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -60,6 +62,7 @@ public class XentryIntegration extends SiebelBusinessService{
         String strDate = sdfDate.format(now);
         return strDate;
     }
+        
     
     @Override
     public void doInvokeMethod(String methodName, SiebelPropertySet input, SiebelPropertySet output) {
@@ -149,11 +152,14 @@ public class XentryIntegration extends SiebelBusinessService{
                         output.setProperty("Response_Status", "Success");
                         output.setProperty("BrowserURL", browserURL);
                         output.setProperty("JobId", jobId);
+                        //boolean recUpd = ssr.updateServiceOrderRecordWithXentryData(psOrder.getProperty("OrderId"), jobId, browserURL);                        
                     }else{
                         MyLogging.log(Level.INFO,"InitJob Response Message Failed.....");
                         output.setProperty("Response_Status", "Error");
                         output.setProperty("ErrorCode", response_msg.getErrorId());
                         output.setProperty("ErrorMessage", response_msg.getErrorText()+"::::::"+response_msg.getTechnicalDetails());
+                        MyLogging.log(Level.SEVERE, "ErrorCode: "+response_msg.getErrorId());
+                        MyLogging.log(Level.SEVERE, "ErrorMessage: "+response_msg.getErrorText()+"::::::"+response_msg.getTechnicalDetails());
                     }
                 }else{
                     MyLogging.log(Level.INFO,"InitJob Failed.....");
@@ -338,6 +344,7 @@ public class XentryIntegration extends SiebelBusinessService{
     }
     
     public static void main(String[] args) {
+        
         SiebelPropertySet spsInput = new SiebelPropertySet();
         SiebelPropertySet spsOutput = new SiebelPropertySet();
         SiebelPropertySet tempPS = new SiebelPropertySet();
